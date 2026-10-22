@@ -17,65 +17,72 @@ export class BoardController {
   ) {}
 
   start() {
-    const m = this.model;
+    const model = this.model;
 
-    this.board.bind({
-      onPlayerMove: (index, pos) => m.movePlayer(index, pos),
+    this.board.setHandlers({
+      onPlayerMove: (index, position) => model.movePlayer(index, position),
     });
 
-    this.panel.bind({
-      onPresetSelect: (slot) => this.update(() => m.selectPreset(slot)),
-      onPresetAdd: () => this.update(() => m.addPreset()),
-      onPresetRename: (name) => this.update(() => m.renamePreset(name)),
-      onPresetDelete: () => this.update(() => m.deletePreset()),
+    this.panel.setHandlers({
+      onPresetSelect: (slot) => this.changeAndRefresh(() => model.selectPreset(slot)),
+      onPresetAdd: () => this.changeAndRefresh(() => model.addPreset()),
+      onPresetRename: (name) => this.changeAndRefresh(() => model.renamePreset(name)),
+      onPresetDelete: () => this.changeAndRefresh(() => model.deletePreset()),
       onSharedSave: () => {
-        this.update(() => m.saveSharedAsPreset());
-        this.panel.toast(SHARED_SAVED_MESSAGE);
+        this.changeAndRefresh(() => model.saveSharedAsPreset());
+        this.panel.showToast(SHARED_SAVED_MESSAGE);
       },
-      onSharedLeave: () => this.update(() => m.leaveSharedView()),
-      onFormationChange: (name) => this.update(() => m.setFormation(name)),
-      onColorChange: (key, value) => this.update(() => m.setColor(key, value)),
-      onNameChange: (index, name) => this.update(() => m.setName(index, name)),
-      onReset: () => this.update(() => m.reset()),
+      onSharedLeave: () => this.changeAndRefresh(() => model.leaveSharedView()),
+      onFormationChange: (name) => this.changeAndRefresh(() => model.setFormation(name)),
+      onColorChange: (key, value) => this.changeAndRefresh(() => model.setColor(key, value)),
+      onPlayerNameChange: (index, name) => this.changeAndRefresh(() => model.setPlayerName(index, name)),
+      onReset: () => this.changeAndRefresh(() => model.resetActivePreset()),
       onShare: () => this.copyShareLink(),
       onDownload: () => this.downloadImage(),
     });
 
-    window.addEventListener('hashchange', () => this.update(() => m.openSharedLink()));
-
-    this.refresh();
-  }
-
-  private update(change: () => void) {
-    change();
-    this.refresh();
-  }
-
-  private refresh() {
-    const m = this.model;
-    this.panel.sync({
-      state: m.state,
-      presets: m.presetList,
-      activeSlot: m.activeSlot,
-      isSharedView: m.isSharedView,
-      canAddPreset: m.canAddPreset,
+    window.addEventListener('hashchange', () => {
+      this.changeAndRefresh(() => model.openSharedLink());
     });
-    this.board.render(m.state);
-    this.board.setEditable(!m.isSharedView);
+
+    this.refreshViews();
+  }
+
+  private changeAndRefresh(change: () => void) {
+    change();
+    this.refreshViews();
+  }
+
+  private refreshViews() {
+    const model = this.model;
+
+    this.panel.render({
+      state: model.state,
+      presets: model.presetList,
+      activeSlot: model.activeSlot,
+      isSharedView: model.isSharedView,
+      canAddPreset: model.canAddPreset,
+    });
+
+    this.board.render(model.state);
+    this.board.setEditable(!model.isSharedView);
   }
 
   private async copyShareLink() {
-    const url = `${location.origin}${location.pathname}#${this.model.shareHash()}`;
+    const shareUrl = `${location.origin}${location.pathname}#${this.model.createShareHash()}`;
+
     try {
-      await navigator.clipboard.writeText(url);
-      this.panel.toast(SHARE_COPIED_MESSAGE);
+      await navigator.clipboard.writeText(shareUrl);
+      this.panel.showToast(SHARE_COPIED_MESSAGE);
     } catch {
-      prompt(SHARE_FALLBACK_MESSAGE, url);
+      prompt(SHARE_FALLBACK_MESSAGE, shareUrl);
     }
   }
 
   private async downloadImage() {
-    await this.board.saveImage(`${IMAGE_FILE_PREFIX}${this.model.state.formation}.png`);
-    this.panel.toast(IMAGE_SAVED_MESSAGE);
+    const filename = `${IMAGE_FILE_PREFIX}${this.model.state.formation}.png`;
+
+    await this.board.saveImage(filename);
+    this.panel.showToast(IMAGE_SAVED_MESSAGE);
   }
 }

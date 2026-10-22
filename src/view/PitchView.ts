@@ -22,69 +22,118 @@ import {
   SPOT_RADIUS_PX,
 } from '../const/PitchCONST';
 
-const LINE = { width: LINE_WIDTH, color: LINE_COLOR, alpha: LINE_ALPHA };
+const LINE_STYLE = { width: LINE_WIDTH, color: LINE_COLOR, alpha: LINE_ALPHA };
 const CENTER_X_M = FIELD_WIDTH_M / 2;
-const HALFWAY_M = FIELD_LENGTH_M / 2;
+const HALFWAY_Y_M = FIELD_LENGTH_M / 2;
 
-const m = (meters: number) => meters * PX_PER_METER;
+function metersToPx(meters: number): number {
+  return meters * PX_PER_METER;
+}
 
 export class PitchView extends Container {
   constructor() {
     super();
-    this.addChild(this.createGrass(), this.createMarkings());
+    this.addChild(this.createGrass(), this.createLineMarkings());
   }
 
   private createGrass(): Graphics {
-    const g = new Graphics().rect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT).fill(GRASS_COLOR);
-    const stripe = FIELD_HEIGHT_PX / GRASS_STRIPE_COUNT;
+    const graphics = new Graphics().rect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT).fill(GRASS_COLOR);
+    const stripeHeight = FIELD_HEIGHT_PX / GRASS_STRIPE_COUNT;
+
     for (let i = 0; i < GRASS_STRIPE_COUNT; i += 2) {
-      g.rect(0, CANVAS_MARGIN + i * stripe, CANVAS_WIDTH, stripe).fill(GRASS_STRIPE_COLOR);
+      const stripeY = CANVAS_MARGIN + i * stripeHeight;
+      graphics.rect(0, stripeY, CANVAS_WIDTH, stripeHeight).fill(GRASS_STRIPE_COLOR);
     }
-    return g;
+
+    return graphics;
   }
 
-  private createMarkings(): Graphics {
-    const g = new Graphics();
-    g.position.set(CANVAS_MARGIN, CANVAS_MARGIN);
-    this.drawCenter(g);
-    this.drawGoalArea(g, true);
-    this.drawGoalArea(g, false);
-    this.drawCorners(g);
-    return g;
+  private createLineMarkings(): Graphics {
+    const graphics = new Graphics();
+    graphics.position.set(CANVAS_MARGIN, CANVAS_MARGIN);
+
+    this.drawOutlineAndCenter(graphics);
+    this.drawGoalSide(graphics, true);
+    this.drawGoalSide(graphics, false);
+    this.drawCornerArcs(graphics);
+
+    return graphics;
   }
 
-  private drawCenter(g: Graphics) {
-    g.rect(0, 0, m(FIELD_WIDTH_M), m(FIELD_LENGTH_M)).stroke(LINE);
-    g.moveTo(0, m(HALFWAY_M)).lineTo(m(FIELD_WIDTH_M), m(HALFWAY_M)).stroke(LINE);
-    g.circle(m(CENTER_X_M), m(HALFWAY_M), m(CENTER_CIRCLE_RADIUS_M)).stroke(LINE);
-    g.circle(m(CENTER_X_M), m(HALFWAY_M), SPOT_RADIUS_PX).fill(LINE_COLOR);
+  private drawOutlineAndCenter(graphics: Graphics) {
+    const fieldWidth = metersToPx(FIELD_WIDTH_M);
+    const fieldLength = metersToPx(FIELD_LENGTH_M);
+    const centerX = metersToPx(CENTER_X_M);
+    const halfwayY = metersToPx(HALFWAY_Y_M);
+
+    graphics.rect(0, 0, fieldWidth, fieldLength).stroke(LINE_STYLE);
+    graphics.moveTo(0, halfwayY).lineTo(fieldWidth, halfwayY).stroke(LINE_STYLE);
+    graphics.circle(centerX, halfwayY, metersToPx(CENTER_CIRCLE_RADIUS_M)).stroke(LINE_STYLE);
+    graphics.circle(centerX, halfwayY, SPOT_RADIUS_PX).fill(LINE_COLOR);
   }
 
-  private drawGoalArea(g: Graphics, top: boolean) {
-    const y = (d: number) => m(top ? d : FIELD_LENGTH_M - d);
-    const box = (width: number, depth: number) =>
-      g.rect(m(CENTER_X_M - width / 2), Math.min(y(0), y(depth)), m(width), m(depth)).stroke(LINE);
+  private drawGoalSide(graphics: Graphics, isTopSide: boolean) {
+    const centerX = metersToPx(CENTER_X_M);
 
-    box(PENALTY_AREA_WIDTH_M, PENALTY_AREA_DEPTH_M);
-    box(GOAL_AREA_WIDTH_M, GOAL_AREA_DEPTH_M);
-    g.rect(m(CENTER_X_M - GOAL_WIDTH_M / 2), top ? -m(GOAL_DEPTH_M) : m(FIELD_LENGTH_M), m(GOAL_WIDTH_M), m(GOAL_DEPTH_M))
-      .stroke(LINE);
-    g.circle(m(CENTER_X_M), y(PENALTY_SPOT_DISTANCE_M), SPOT_RADIUS_PX).fill(LINE_COLOR);
+    const distanceFromGoalLineToY = (distanceM: number) => {
+      const yM = isTopSide ? distanceM : FIELD_LENGTH_M - distanceM;
+      return metersToPx(yM);
+    };
 
-    const half = Math.acos((PENALTY_AREA_DEPTH_M - PENALTY_SPOT_DISTANCE_M) / PENALTY_ARC_RADIUS_M);
-    const dir = top ? Math.PI / 2 : -Math.PI / 2;
-    this.drawArc(g, m(CENTER_X_M), y(PENALTY_SPOT_DISTANCE_M), m(PENALTY_ARC_RADIUS_M), dir - half, dir + half);
+    const drawBoxFromGoalLine = (widthM: number, depthM: number) => {
+      const x = metersToPx(CENTER_X_M - widthM / 2);
+      const y = Math.min(distanceFromGoalLineToY(0), distanceFromGoalLineToY(depthM));
+      graphics.rect(x, y, metersToPx(widthM), metersToPx(depthM)).stroke(LINE_STYLE);
+    };
+
+    drawBoxFromGoalLine(PENALTY_AREA_WIDTH_M, PENALTY_AREA_DEPTH_M);
+    drawBoxFromGoalLine(GOAL_AREA_WIDTH_M, GOAL_AREA_DEPTH_M);
+
+    const goalX = metersToPx(CENTER_X_M - GOAL_WIDTH_M / 2);
+    const goalY = isTopSide ? -metersToPx(GOAL_DEPTH_M) : metersToPx(FIELD_LENGTH_M);
+    graphics.rect(goalX, goalY, metersToPx(GOAL_WIDTH_M), metersToPx(GOAL_DEPTH_M)).stroke(LINE_STYLE);
+
+    const penaltySpotY = distanceFromGoalLineToY(PENALTY_SPOT_DISTANCE_M);
+    graphics.circle(centerX, penaltySpotY, SPOT_RADIUS_PX).fill(LINE_COLOR);
+
+    const arcHalfAngle = Math.acos((PENALTY_AREA_DEPTH_M - PENALTY_SPOT_DISTANCE_M) / PENALTY_ARC_RADIUS_M);
+    const arcCenterAngle = isTopSide ? Math.PI / 2 : -Math.PI / 2;
+    this.drawArc(
+      graphics,
+      centerX,
+      penaltySpotY,
+      metersToPx(PENALTY_ARC_RADIUS_M),
+      arcCenterAngle - arcHalfAngle,
+      arcCenterAngle + arcHalfAngle,
+    );
   }
 
-  private drawCorners(g: Graphics) {
-    const corners: [number, number][] = [[0, 0], [FIELD_WIDTH_M, 0], [FIELD_WIDTH_M, FIELD_LENGTH_M], [0, FIELD_LENGTH_M]];
-    corners.forEach(([x, y], i) => {
-      const start = (i * Math.PI) / 2;
-      this.drawArc(g, m(x), m(y), m(CORNER_ARC_RADIUS_M), start, start + Math.PI / 2);
+  private drawCornerArcs(graphics: Graphics) {
+    const corners: [number, number][] = [
+      [0, 0],
+      [FIELD_WIDTH_M, 0],
+      [FIELD_WIDTH_M, FIELD_LENGTH_M],
+      [0, FIELD_LENGTH_M],
+    ];
+
+    corners.forEach(([xM, yM], i) => {
+      const startAngle = (i * Math.PI) / 2;
+      const endAngle = startAngle + Math.PI / 2;
+      this.drawArc(graphics, metersToPx(xM), metersToPx(yM), metersToPx(CORNER_ARC_RADIUS_M), startAngle, endAngle);
     });
   }
 
-  private drawArc(g: Graphics, cx: number, cy: number, r: number, start: number, end: number) {
-    g.moveTo(cx + r * Math.cos(start), cy + r * Math.sin(start)).arc(cx, cy, r, start, end).stroke(LINE);
+  private drawArc(
+    graphics: Graphics,
+    centerX: number,
+    centerY: number,
+    radius: number,
+    startAngle: number,
+    endAngle: number,
+  ) {
+    const startX = centerX + radius * Math.cos(startAngle);
+    const startY = centerY + radius * Math.sin(startAngle);
+
+    graphics.moveTo(startX, startY).arc(centerX, centerY, radius, startAngle, endAngle).stroke(LINE_STYLE);
   }
 }

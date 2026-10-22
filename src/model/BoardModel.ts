@@ -6,39 +6,42 @@ import {
 } from '../const/BoardCONST';
 import { BASE_PRESET_SLOT, DEFAULT_PRESET_NAME_PREFIX, MAX_PRESET_COUNT } from '../const/PresetCONST';
 import { BoardStorage } from './BoardStorage';
-import { formationPositions } from './formations';
+import { getFormationPositions } from './formations';
 import type { BoardState, ColorKey, FormationName, Position, PresetSummary } from './types';
 
 export class BoardModel {
   private readonly presets: Map<number, BoardState>;
-  private active: number;
-  private shared: BoardState | null;
+  private currentSlot: number;
+  private sharedState: BoardState | null = null;
 
   constructor(private readonly storage = new BoardStorage()) {
     this.presets = storage.loadPresets();
-    if (!this.presets.has(BASE_PRESET_SLOT)) this.store(BASE_PRESET_SLOT, BoardModel.createDefault(BASE_PRESET_SLOT));
-    const saved = storage.loadActiveSlot();
-    this.active = this.presets.has(saved) ? saved : BASE_PRESET_SLOT;
-    this.shared = null;
+
+    if (!this.presets.has(BASE_PRESET_SLOT)) {
+      this.savePreset(BASE_PRESET_SLOT, createDefaultPreset(BASE_PRESET_SLOT));
+    }
+
+    const savedSlot = storage.loadActiveSlot();
+    this.currentSlot = this.presets.has(savedSlot) ? savedSlot : BASE_PRESET_SLOT;
+
     this.openSharedLink();
   }
 
   get state(): Readonly<BoardState> {
-    return this.shared ?? this.activePreset;
+    return this.sharedState ?? this.activePreset;
   }
 
   get isSharedView(): boolean {
-    return this.shared !== null;
+    return this.sharedState !== null;
   }
 
   get activeSlot(): number {
-    return this.active;
+    return this.currentSlot;
   }
 
   get presetList(): PresetSummary[] {
-    return [...this.presets]
-      .sort(([a], [b]) => a - b)
-      .map(([slot, state]) => ({ slot, name: state.name }));
+    const sortedPresets = [...this.presets].sort(([slotA], [slotB]) => slotA - slotB);
+    return sortedPresets.map(([slot, state]) => ({ slot, name: state.name }));
   }
 
   get canAddPreset(): boolean {
@@ -46,106 +49,146 @@ export class BoardModel {
   }
 
   selectPreset(slot: number) {
-    if (!this.presets.has(slot)) return;
-    this.active = slot;
+    if (!this.presets.has(slot)) {
+      return;
+    }
+
+    this.currentSlot = slot;
     this.storage.saveActiveSlot(slot);
     this.leaveSharedView();
   }
 
   addPreset() {
-    const slot = this.freeSlot();
-    if (slot === null) return;
-    this.store(slot, BoardModel.createDefault(slot));
+    const slot = this.findEmptySlot();
+    if (slot === null) {
+      return;
+    }
+
+    this.savePreset(slot, createDefaultPreset(slot));
     this.selectPreset(slot);
   }
 
   deletePreset() {
-    if (this.active === BASE_PRESET_SLOT) return;
-    this.presets.delete(this.active);
-    this.storage.removePreset(this.active);
+    if (this.currentSlot === BASE_PRESET_SLOT) {
+      return;
+    }
+
+    this.presets.delete(this.currentSlot);
+    this.storage.removePreset(this.currentSlot);
     this.selectPreset(BASE_PRESET_SLOT);
   }
 
   renamePreset(name: string) {
-    this.edit((s) => (s.name = name));
+    this.editActivePreset((preset) => {
+      preset.name = name;
+    });
   }
 
   saveSharedAsPreset() {
-    const slot = this.freeSlot();
-    if (!this.shared || slot === null) return;
-    this.store(slot, this.shared);
+    const slot = this.findEmptySlot();
+    if (!this.sharedState || slot === null) {
+      return;
+    }
+
+    this.savePreset(slot, this.sharedState);
     this.selectPreset(slot);
   }
 
   openSharedLink() {
-    this.shared = this.storage.readSharedLink() ?? this.shared;
+    this.sharedState = this.storage.readSharedStateFromUrl() ?? this.sharedState;
   }
 
   leaveSharedView() {
-    this.shared = null;
-    this.storage.clearSharedLink();
+    this.sharedState = null;
+    this.storage.clearSharedStateFromUrl();
   }
 
   setFormation(name: FormationName) {
-    this.edit((s) => {
-      s.formation = name;
-      formationPositions(name).forEach((pos, i) => Object.assign(s.players[i], pos));
+    this.editActivePreset((preset) => {
+      preset.formation = name;
+
+      const positions = getFormationPositions(name);
+      for (let i = 0; i < positions.length; i++) {
+        preset.players[i].x = positions[i].x;
+        preset.players[i].y = positions[i].y;
+      }
     });
   }
 
   setColor(key: ColorKey, value: string) {
-    this.edit((s) => (s[key] = value));
+    this.editActivePreset((preset) => {
+      preset[key] = value;
+    });
   }
 
-  setName(index: number, name: string) {
-    this.edit((s) => (s.players[index].name = name));
+  setPlayerName(index: number, name: string) {
+    this.editActivePreset((preset) => {
+      preset.players[index].name = name;
+    });
   }
 
-  movePlayer(index: number, pos: Position) {
-    this.edit((s) => Object.assign(s.players[index], pos));
+  movePlayer(index: number, position: Position) {
+    this.editActivePreset((preset) => {
+      preset.players[index].x = position.x;
+      preset.players[index].y = position.y;
+    });
   }
 
-  reset() {
-    if (this.shared) return;
-    this.store(this.active, { ...BoardModel.createDefault(this.active), name: this.activePreset.name });
+  resetActivePreset() {
+    if (this.sharedState) {
+      return;
+    }
+
+    const defaultPreset = createDefaultPreset(this.currentSlot);
+    const currentName = this.activePreset.name;
+    this.savePreset(this.currentSlot, { ...defaultPreset, name: currentName });
   }
 
-  shareHash(): string {
-    return this.storage.encode(this.state);
+  createShareHash(): string {
+    return this.storage.encodeShareHash(this.state);
   }
 
   private get activePreset(): BoardState {
-    return this.presets.get(this.active)!;
+    return this.presets.get(this.currentSlot)!;
   }
 
-  private edit(change: (state: BoardState) => void) {
-    if (this.shared) return;
-    change(this.activePreset);
-    this.storage.savePreset(this.active, this.activePreset);
+  private editActivePreset(edit: (preset: BoardState) => void) {
+    if (this.sharedState) {
+      return;
+    }
+
+    edit(this.activePreset);
+    this.storage.savePreset(this.currentSlot, this.activePreset);
   }
 
-  private store(slot: number, state: BoardState) {
+  private savePreset(slot: number, state: BoardState) {
     this.presets.set(slot, state);
     this.storage.savePreset(slot, state);
   }
 
-  private freeSlot(): number | null {
+  private findEmptySlot(): number | null {
     for (let slot = 1; slot <= MAX_PRESET_COUNT; slot++) {
-      if (!this.presets.has(slot)) return slot;
+      if (!this.presets.has(slot)) {
+        return slot;
+      }
     }
+
     return null;
   }
+}
 
-  private static createDefault(slot: number): BoardState {
-    return {
-      name: `${DEFAULT_PRESET_NAME_PREFIX}${slot}`,
-      formation: DEFAULT_FORMATION,
-      color: DEFAULT_JERSEY_COLOR,
-      gkColor: DEFAULT_GK_JERSEY_COLOR,
-      players: formationPositions(DEFAULT_FORMATION).map((pos, i) => ({
-        name: `${DEFAULT_PLAYER_NAME_PREFIX}${i + 1}`,
-        ...pos,
-      })),
-    };
-  }
+function createDefaultPreset(slot: number): BoardState {
+  const positions = getFormationPositions(DEFAULT_FORMATION);
+  const players = positions.map((position, i) => ({
+    name: `${DEFAULT_PLAYER_NAME_PREFIX}${i + 1}`,
+    ...position,
+  }));
+
+  return {
+    name: `${DEFAULT_PRESET_NAME_PREFIX}${slot}`,
+    formation: DEFAULT_FORMATION,
+    color: DEFAULT_JERSEY_COLOR,
+    gkColor: DEFAULT_GK_JERSEY_COLOR,
+    players,
+  };
 }

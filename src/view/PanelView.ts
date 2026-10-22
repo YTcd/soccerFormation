@@ -24,7 +24,7 @@ export type PanelHandlers = {
   onSharedLeave(): void;
   onFormationChange(name: FormationName): void;
   onColorChange(key: ColorKey, value: string): void;
-  onNameChange(index: number, name: string): void;
+  onPlayerNameChange(index: number, name: string): void;
   onShare(): void;
   onDownload(): void;
   onReset(): void;
@@ -38,103 +38,165 @@ export type PanelData = {
   canAddPreset: boolean;
 };
 
-const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+function getElement<T extends HTMLElement>(id: string): T {
+  return document.getElementById(id) as T;
+}
 
 export class PanelView {
-  private readonly presetSection = byId('presetSection');
-  private readonly preset = byId<HTMLSelectElement>('preset');
-  private readonly presetName = byId<HTMLInputElement>('presetName');
-  private readonly presetDelete = byId<HTMLButtonElement>('presetDelete');
+  private readonly presetSection = getElement('presetSection');
+  private readonly presetSelect = getElement<HTMLSelectElement>('preset');
+  private readonly presetNameInput = getElement<HTMLInputElement>('presetName');
+  private readonly presetDeleteButton = getElement<HTMLButtonElement>('presetDelete');
 
-  private readonly sharedBanner = byId('sharedBanner');
-  private readonly sharedName = byId('sharedName');
-  private readonly sharedSave = byId<HTMLButtonElement>('sharedSave');
-  private readonly sharedFull = byId('sharedFull');
+  private readonly sharedBanner = getElement('sharedBanner');
+  private readonly sharedName = getElement('sharedName');
+  private readonly sharedSaveButton = getElement<HTMLButtonElement>('sharedSave');
+  private readonly sharedFullMessage = getElement('sharedFull');
 
-  private readonly editor = byId<HTMLFieldSetElement>('editor');
-  private readonly formation = byId<HTMLSelectElement>('formation');
-  private readonly colors: Record<ColorKey, HTMLInputElement> = {
-    color: byId('color'),
-    gkColor: byId('gkColor'),
+  private readonly editor = getElement<HTMLFieldSetElement>('editor');
+  private readonly formationSelect = getElement<HTMLSelectElement>('formation');
+  private readonly colorInputs: Record<ColorKey, HTMLInputElement> = {
+    color: getElement('color'),
+    gkColor: getElement('gkColor'),
   };
-  private readonly nameInputs: HTMLInputElement[];
-  private readonly reset = byId<HTMLButtonElement>('reset');
+  private readonly playerNameInputs: HTMLInputElement[] = [];
+  private readonly resetButton = getElement<HTMLButtonElement>('reset');
 
-  private readonly toastEl = byId<HTMLParagraphElement>('toast');
+  private readonly toastMessage = getElement<HTMLParagraphElement>('toast');
   private toastTimer?: number;
 
   constructor() {
-    this.presetName.maxLength = PRESET_NAME_MAX_LENGTH;
-    this.sharedFull.textContent = PRESETS_FULL_MESSAGE;
-    for (const name of FORMATION_NAMES) this.formation.add(new Option(name, name));
-    this.nameInputs = Array.from({ length: PLAYER_COUNT }, (_, i) => this.createNameInput(i));
-  }
+    this.presetNameInput.maxLength = PRESET_NAME_MAX_LENGTH;
+    this.sharedFullMessage.textContent = PRESETS_FULL_MESSAGE;
 
-  bind(h: PanelHandlers) {
-    this.preset.addEventListener('change', () => {
-      if (this.preset.value === ADD_PRESET_OPTION_VALUE) h.onPresetAdd();
-      else h.onPresetSelect(Number(this.preset.value));
-    });
-    this.presetName.addEventListener('input', () => h.onPresetRename(this.presetName.value));
-    this.presetDelete.addEventListener('click', () => {
-      if (confirm(DELETE_PRESET_CONFIRM_MESSAGE)) h.onPresetDelete();
-    });
-    this.sharedSave.addEventListener('click', () => h.onSharedSave());
-    byId('sharedLeave').addEventListener('click', () => h.onSharedLeave());
-
-    this.formation.addEventListener('change', () => h.onFormationChange(this.formation.value as FormationName));
-    for (const [key, input] of Object.entries(this.colors) as [ColorKey, HTMLInputElement][]) {
-      input.addEventListener('input', () => h.onColorChange(key, input.value));
+    for (const name of FORMATION_NAMES) {
+      this.formationSelect.add(new Option(name, name));
     }
-    this.nameInputs.forEach((input, i) => input.addEventListener('input', () => h.onNameChange(i, input.value)));
 
-    byId('share').addEventListener('click', () => h.onShare());
-    byId('download').addEventListener('click', () => h.onDownload());
-    this.reset.addEventListener('click', () => {
-      if (confirm(RESET_CONFIRM_MESSAGE)) h.onReset();
-    });
+    for (let i = 0; i < PLAYER_COUNT; i++) {
+      this.playerNameInputs.push(this.createPlayerNameInput(i));
+    }
   }
 
-  sync({ state, presets, activeSlot, isSharedView, canAddPreset }: PanelData) {
-    this.syncPresets(presets, activeSlot, canAddPreset);
+  setHandlers(handlers: PanelHandlers) {
+    this.bindPresetEvents(handlers);
+    this.bindSharedViewEvents(handlers);
+    this.bindEditorEvents(handlers);
+    this.bindActionEvents(handlers);
+  }
+
+  render({ state, presets, activeSlot, isSharedView, canAddPreset }: PanelData) {
+    this.renderPresetSelector(presets, activeSlot, canAddPreset);
 
     this.presetSection.hidden = isSharedView;
     this.sharedBanner.hidden = !isSharedView;
     this.sharedName.textContent = `'${state.name}'`;
-    this.sharedSave.disabled = !canAddPreset;
-    this.sharedFull.hidden = canAddPreset;
+    this.sharedSaveButton.disabled = !canAddPreset;
+    this.sharedFullMessage.hidden = canAddPreset;
     this.editor.disabled = isSharedView;
-    this.reset.disabled = isSharedView;
+    this.resetButton.disabled = isSharedView;
 
-    this.formation.value = state.formation;
-    this.colors.color.value = state.color;
-    this.colors.gkColor.value = state.gkColor;
-    this.nameInputs.forEach((input, i) => (input.value = state.players[i].name));
+    this.formationSelect.value = state.formation;
+    this.colorInputs.color.value = state.color;
+    this.colorInputs.gkColor.value = state.gkColor;
+
+    for (let i = 0; i < this.playerNameInputs.length; i++) {
+      this.playerNameInputs[i].value = state.players[i].name;
+    }
   }
 
-  toast(message: string) {
-    this.toastEl.textContent = message;
+  showToast(message: string) {
+    this.toastMessage.textContent = message;
+
     clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => (this.toastEl.textContent = ''), TOAST_DURATION_MS);
+    this.toastTimer = setTimeout(() => {
+      this.toastMessage.textContent = '';
+    }, TOAST_DURATION_MS);
   }
 
-  private syncPresets(presets: PresetSummary[], activeSlot: number, canAddPreset: boolean) {
-    this.preset.replaceChildren(...presets.map((p) => new Option(p.name || `#${p.slot}`, String(p.slot))));
-    if (canAddPreset) this.preset.add(new Option(ADD_PRESET_OPTION_LABEL, ADD_PRESET_OPTION_VALUE));
-    this.preset.value = String(activeSlot);
+  private bindPresetEvents(handlers: PanelHandlers) {
+    this.presetSelect.addEventListener('change', () => {
+      const selectedValue = this.presetSelect.value;
 
-    this.presetName.value = presets.find((p) => p.slot === activeSlot)?.name ?? '';
-    this.presetDelete.disabled = activeSlot === BASE_PRESET_SLOT;
+      if (selectedValue === ADD_PRESET_OPTION_VALUE) {
+        handlers.onPresetAdd();
+      } else {
+        handlers.onPresetSelect(Number(selectedValue));
+      }
+    });
+
+    this.presetNameInput.addEventListener('input', () => {
+      handlers.onPresetRename(this.presetNameInput.value);
+    });
+
+    this.presetDeleteButton.addEventListener('click', () => {
+      if (confirm(DELETE_PRESET_CONFIRM_MESSAGE)) {
+        handlers.onPresetDelete();
+      }
+    });
   }
 
-  private createNameInput(index: number): HTMLInputElement {
+  private bindSharedViewEvents(handlers: PanelHandlers) {
+    this.sharedSaveButton.addEventListener('click', () => handlers.onSharedSave());
+    getElement('sharedLeave').addEventListener('click', () => handlers.onSharedLeave());
+  }
+
+  private bindEditorEvents(handlers: PanelHandlers) {
+    this.formationSelect.addEventListener('change', () => {
+      handlers.onFormationChange(this.formationSelect.value as FormationName);
+    });
+
+    const colorEntries = Object.entries(this.colorInputs) as [ColorKey, HTMLInputElement][];
+    for (const [key, input] of colorEntries) {
+      input.addEventListener('input', () => handlers.onColorChange(key, input.value));
+    }
+
+    this.playerNameInputs.forEach((input, index) => {
+      input.addEventListener('input', () => handlers.onPlayerNameChange(index, input.value));
+    });
+  }
+
+  private bindActionEvents(handlers: PanelHandlers) {
+    getElement('share').addEventListener('click', () => handlers.onShare());
+    getElement('download').addEventListener('click', () => handlers.onDownload());
+
+    this.resetButton.addEventListener('click', () => {
+      if (confirm(RESET_CONFIRM_MESSAGE)) {
+        handlers.onReset();
+      }
+    });
+  }
+
+  private renderPresetSelector(presets: PresetSummary[], activeSlot: number, canAddPreset: boolean) {
+    const presetOptions = presets.map((preset) => {
+      const label = preset.name || `#${preset.slot}`;
+      return new Option(label, String(preset.slot));
+    });
+    this.presetSelect.replaceChildren(...presetOptions);
+
+    if (canAddPreset) {
+      this.presetSelect.add(new Option(ADD_PRESET_OPTION_LABEL, ADD_PRESET_OPTION_VALUE));
+    }
+
+    this.presetSelect.value = String(activeSlot);
+
+    const activePreset = presets.find((preset) => preset.slot === activeSlot);
+    this.presetNameInput.value = activePreset?.name ?? '';
+    this.presetDeleteButton.disabled = activeSlot === BASE_PRESET_SLOT;
+  }
+
+  private createPlayerNameInput(index: number): HTMLInputElement {
+    const isGoalkeeper = index === GOALKEEPER_INDEX;
+
     const input = document.createElement('input');
     input.type = 'text';
     input.maxLength = NAME_MAX_LENGTH;
-    input.placeholder = index === GOALKEEPER_INDEX ? GK_NAME_PLACEHOLDER : `${PLAYER_NAME_PLACEHOLDER_PREFIX}${index + 1}`;
-    const li = document.createElement('li');
-    li.append(input);
-    byId('names').append(li);
+    input.placeholder = isGoalkeeper ? GK_NAME_PLACEHOLDER : `${PLAYER_NAME_PLACEHOLDER_PREFIX}${index + 1}`;
+
+    const listItem = document.createElement('li');
+    listItem.append(input);
+    getElement('names').append(listItem);
+
     return input;
   }
 }

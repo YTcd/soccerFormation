@@ -7,85 +7,149 @@ import type { BoardState } from './types';
 export class BoardStorage {
   loadPresets(): Map<number, BoardState> {
     const presets = new Map<number, BoardState>();
+
     for (let slot = 1; slot <= MAX_PRESET_COUNT; slot++) {
-      const state = this.tryRead(() => JSON.parse(this.getItem(PRESET_KEY_PREFIX + slot) ?? 'null'));
-      if (state) presets.set(slot, state);
+      const state = parseValidState(() => {
+        const json = readLocalStorage(getPresetKey(slot)) ?? 'null';
+        return JSON.parse(json);
+      });
+
+      if (state) {
+        presets.set(slot, state);
+      }
     }
+
     return presets;
   }
 
   savePreset(slot: number, state: BoardState) {
-    this.setItem(PRESET_KEY_PREFIX + slot, this.serialize(state));
+    writeLocalStorage(getPresetKey(slot), serializeState(state));
   }
 
   removePreset(slot: number) {
-    try {
-      localStorage.removeItem(PRESET_KEY_PREFIX + slot);
-    } catch {}
+    removeLocalStorage(getPresetKey(slot));
   }
 
   loadActiveSlot(): number {
-    return Number(this.getItem(ACTIVE_PRESET_KEY));
+    return Number(readLocalStorage(ACTIVE_PRESET_KEY));
   }
 
   saveActiveSlot(slot: number) {
-    this.setItem(ACTIVE_PRESET_KEY, String(slot));
+    writeLocalStorage(ACTIVE_PRESET_KEY, String(slot));
   }
 
-  readSharedLink(): BoardState | null {
+  readSharedStateFromUrl(): BoardState | null {
     const hash = location.hash.slice(1);
-    return hash ? this.tryRead(() => this.decode(hash)) : null;
-  }
-
-  clearSharedLink() {
-    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
-  }
-
-  encode(state: BoardState): string {
-    const bytes = new TextEncoder().encode(this.serialize(state));
-    return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  }
-
-  private decode(hash: string): unknown {
-    const bytes = Uint8Array.from(atob(hash.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
-    return JSON.parse(new TextDecoder().decode(bytes));
-  }
-
-  private serialize(state: BoardState): string {
-    return JSON.stringify(state, (_, v) =>
-      typeof v === 'number' ? Math.round(v * COORDINATE_PRECISION) / COORDINATE_PRECISION : v,
-    );
-  }
-
-  private tryRead(read: () => unknown): BoardState | null {
-    try {
-      const state = read();
-      return isValidState(state) ? state : null;
-    } catch {
+    if (!hash) {
       return null;
+    }
+
+    return parseValidState(() => decodeShareHash(hash));
+  }
+
+  clearSharedStateFromUrl() {
+    if (location.hash) {
+      history.replaceState(null, '', location.pathname + location.search);
     }
   }
 
-  private getItem(key: string): string | null {
-    try {
-      return localStorage.getItem(key);
-    } catch {
-      return null;
-    }
-  }
+  encodeShareHash(state: BoardState): string {
+    const json = serializeState(state);
+    const bytes = new TextEncoder().encode(json);
+    const base64 = btoa(String.fromCharCode(...bytes));
 
-  private setItem(key: string, value: string) {
-    try {
-      localStorage.setItem(key, value);
-    } catch {}
+    return toBase64Url(base64);
   }
 }
 
-function isValidState(s: any): s is BoardState {
-  const isColor = (c: unknown) => typeof c === 'string' && HEX_COLOR_PATTERN.test(c);
-  return (
-    s && typeof s.name === 'string' && s.formation in FORMATIONS && isColor(s.color) && isColor(s.gkColor) &&
-    Array.isArray(s.players) && s.players.length === PLAYER_COUNT &&
-    s.players.every((p: any) => typeof p.name === 'string' && Number.isFinite(p.x) && Number.isFinite(p.y))
-  );
+function decodeShareHash(hash: string): unknown {
+  const binary = atob(fromBase64Url(hash));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  const json = new TextDecoder().decode(bytes);
+  return JSON.parse(json);
+}
+
+function toBase64Url(base64: string): string {
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function fromBase64Url(base64Url: string): string {
+  return base64Url.replace(/-/g, '+').replace(/_/g, '/');
+}
+
+function serializeState(state: BoardState): string {
+  return JSON.stringify(state, (_, value) => {
+    if (typeof value === 'number') {
+      return roundCoordinate(value);
+    }
+    return value;
+  });
+}
+
+function roundCoordinate(value: number): number {
+  return Math.round(value * COORDINATE_PRECISION) / COORDINATE_PRECISION;
+}
+
+function parseValidState(parse: () => unknown): BoardState | null {
+  try {
+    const state = parse();
+    return isBoardState(state) ? state : null;
+  } catch {
+    return null;
+  }
+}
+
+function isBoardState(value: any): value is BoardState {
+  if (!value) {
+    return false;
+  }
+
+  const hasValidInfo =
+    typeof value.name === 'string' &&
+    value.formation in FORMATIONS &&
+    isHexColor(value.color) &&
+    isHexColor(value.gkColor);
+
+  const hasValidPlayers =
+    Array.isArray(value.players) &&
+    value.players.length === PLAYER_COUNT &&
+    value.players.every(isPlayer);
+
+  return hasValidInfo && hasValidPlayers;
+}
+
+function isPlayer(value: any): boolean {
+  return typeof value.name === 'string' && Number.isFinite(value.x) && Number.isFinite(value.y);
+}
+
+function isHexColor(value: unknown): boolean {
+  return typeof value === 'string' && HEX_COLOR_PATTERN.test(value);
+}
+
+function getPresetKey(slot: number): string {
+  return PRESET_KEY_PREFIX + slot;
+}
+
+function readLocalStorage(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalStorage(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {}
+}
+
+function removeLocalStorage(key: string) {
+  try {
+    localStorage.removeItem(key);
+  } catch {}
 }
