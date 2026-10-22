@@ -94,11 +94,3 @@ src/
 │  └─ BoardController.ts      View 이벤트 → Model 변경 → View 갱신
 └─ style.css
 ```
-
-## GitHub Pages 배포
-
-`main` 브랜치에 push하면 GitHub Actions가 빌드해서 배포합니다.
-
-1. 이 폴더를 GitHub 저장소에 push
-2. 저장소 **Settings → Pages → Build and deployment → Source** 를 `GitHub Actions` 로 설정
-3. **Actions** 탭에서 배포가 끝나면 `https://<사용자명>.github.io/<저장소명>/` 에서 확인
