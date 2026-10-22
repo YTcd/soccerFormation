@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>축구 전술판</title>
+</head>
+<body>
+  <header>
+    <h1>⚽ 축구 전술판</h1>
+    <p>선수를 드래그해서 위치를 옮기고, 링크나 이미지로 공유하세요.</p>
+  </header>
+
+  <main>
+    <section id="board" class="board"></section>
+
+    <aside class="panel">
+      <label class="field">
+        <span>포메이션</span>
+        <select id="formation"></select>
+      </label>
+
+      <div class="colors">
+        <label class="field">
+          <span>필드 유니폼</span>
+          <input type="color" id="color" />
+        </label>
+        <label class="field">
+          <span>골키퍼 유니폼</span>
+          <input type="color" id="gkColor" />
+        </label>
+      </div>
+
+      <fieldset>
+        <legend>선수 이름</legend>
+        <ol id="names"></ol>
+      </fieldset>
+
+      <div class="actions">
+        <button id="share" class="primary">링크 복사</button>
+        <button id="download" class="primary">이미지 저장</button>
+        <button id="reset">초기화</button>
+      </div>
+      <p id="toast" role="status"></p>
+    </aside>
+  </main>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

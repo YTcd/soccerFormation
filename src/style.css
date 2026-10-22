@@ -1,0 +1,167 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  background: #14181d;
+  color: #e8ecef;
+}
+
+header {
+  padding: 16px 16px 0;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+header p {
+  margin: 4px 0 0;
+  color: #9aa5b1;
+  font-size: 0.9rem;
+}
+
+main {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 16px;
+}
+
+.board {
+  width: min(100%, calc((100dvh - 110px) * 672 / 1005));
+  flex-shrink: 0;
+}
+
+.board canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.panel {
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: #9aa5b1;
+}
+
+.colors {
+  display: flex;
+  gap: 12px;
+}
+
+.colors .field {
+  flex: 1;
+}
+
+select,
+input[type="text"] {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #333c46;
+  border-radius: 6px;
+  background: #1e242b;
+  color: inherit;
+  font: inherit;
+}
+
+input[type="color"] {
+  width: 100%;
+  height: 34px;
+  padding: 2px;
+  border: 1px solid #333c46;
+  border-radius: 6px;
+  background: #1e242b;
+}
+
+fieldset {
+  margin: 0;
+  padding: 8px 12px 12px;
+  border: 1px solid #333c46;
+  border-radius: 8px;
+}
+
+legend {
+  padding: 0 4px;
+  font-size: 0.85rem;
+  color: #9aa5b1;
+}
+
+#names {
+  margin: 0;
+  padding-left: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#names li::marker {
+  color: #6b7682;
+  font-size: 0.8rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+button {
+  flex: 1;
+  padding: 9px 12px;
+  border: 1px solid #333c46;
+  border-radius: 6px;
+  background: #1e242b;
+  color: inherit;
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+button.primary {
+  background: #2e7d32;
+  border-color: #2e7d32;
+  color: #fff;
+}
+
+button:hover {
+  filter: brightness(1.15);
+}
+
+#toast {
+  min-height: 1.2em;
+  margin: 0;
+  font-size: 0.85rem;
+  color: #81c784;
+}
+
+@media (max-width: 760px) {
+  main {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .board {
+    width: 100%;
+  }
+
+  .panel {
+    width: 100%;
+  }
+}
