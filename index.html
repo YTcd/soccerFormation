@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>축구 전술판</title>
+  <title>포메이션</title>
 </head>
 <body>
   <header>
@@ -15,25 +15,50 @@
     <section id="board" class="board"></section>
 
     <aside class="panel">
-      <label class="field">
-        <span>포메이션</span>
-        <select id="formation"></select>
-      </label>
-
-      <div class="colors">
+      <section id="presetSection" class="presets">
+        <div class="field">
+          <span>프리셋</span>
+          <div class="row">
+            <select id="preset"></select>
+            <button id="presetDelete">삭제</button>
+          </div>
+        </div>
         <label class="field">
-          <span>필드 유니폼</span>
-          <input type="color" id="color" />
+          <span>프리셋 이름</span>
+          <input type="text" id="presetName" />
         </label>
-        <label class="field">
-          <span>골키퍼 유니폼</span>
-          <input type="color" id="gkColor" />
-        </label>
-      </div>
+      </section>
 
-      <fieldset>
-        <legend>선수 이름</legend>
-        <ol id="names"></ol>
+      <section id="sharedBanner" class="shared" hidden>
+        <p><strong id="sharedName"></strong> 포메이션을 공유받았어요.<br />수정하려면 내 프리셋으로 저장하세요.</p>
+        <div class="actions">
+          <button id="sharedSave" class="primary">내 프리셋으로 저장</button>
+          <button id="sharedLeave">내 프리셋으로 돌아가기</button>
+        </div>
+        <p id="sharedFull" class="hint" hidden></p>
+      </section>
+
+      <fieldset id="editor" class="editor">
+        <label class="field">
+          <span>포메이션</span>
+          <select id="formation"></select>
+        </label>
+
+        <div class="colors">
+          <label class="field">
+            <span>필드 유니폼</span>
+            <input type="color" id="color" />
+          </label>
+          <label class="field">
+            <span>골키퍼 유니폼</span>
+            <input type="color" id="gkColor" />
+          </label>
+        </div>
+
+        <fieldset>
+          <legend>선수 이름</legend>
+          <ol id="names"></ol>
+        </fieldset>
       </fieldset>
 
       <div class="actions">

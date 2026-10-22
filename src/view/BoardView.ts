@@ -63,6 +63,11 @@ export class BoardView {
     });
   }
 
+  /** Locks dragging while a read-only (shared) board is shown. */
+  setEditable(editable: boolean) {
+    for (const player of this.players) player.eventMode = editable ? 'static' : 'none';
+  }
+
   /** Downloads the whole board as a PNG. */
   async saveImage(filename: string) {
     const a = document.createElement('a');

@@ -10,8 +10,11 @@ export type Player = Position & { name: string };
 export type ColorKey = 'color' | 'gkColor';
 
 export type BoardState = {
+  name: string; // preset name, also carried in share links
   formation: FormationName;
   color: string; // outfield jersey
   gkColor: string; // goalkeeper jersey
   players: Player[]; // GOALKEEPER_INDEX is the goalkeeper
 };
+
+export type PresetSummary = { slot: number; name: string };

@@ -14,7 +14,7 @@ export const FORMATION_NAMES = Object.keys(FORMATIONS) as (keyof typeof FORMATIO
 
 // Where formation rows are placed, normalized to the field (0 = top goal line, 1 = bottom goal line).
 export const GOALKEEPER_X = 0.5;
-export const GOALKEEPER_Y = 0.93;
-export const BACK_LINE_Y = 0.78;
-export const FRONT_LINE_Y = 0.4;
-export const SIDE_PADDING_X = 0.08;
+export const GOALKEEPER_Y = 0.92;
+export const BACK_LINE_Y = 0.76;
+export const FRONT_LINE_Y = 0.2;
+export const SIDE_PADDING_X = 0.03;
