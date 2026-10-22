@@ -21,12 +21,32 @@ npm run preview  # 빌드 결과(dist/) 확인
 
 ## 구조
 
+MVC 패턴으로 나뉘어 있습니다.
+
 ```
-index.html          화면 구조
-src/main.ts         경기장/선수 렌더링, 드래그, 저장·공유
-src/style.css       스타일
-vite.config.ts      Vite 설정
-.github/workflows/  GitHub Pages 자동 배포
+src/
+├─ main.ts                    진입점: Model·View·Controller 생성과 연결
+├─ const/                     변하지 않는 값 모음 (모두 대문자 이름)
+│  ├─ BoardCONST.ts           선수 수, 기본 포메이션·색상·이름
+│  ├─ FormationCONST.ts       포메이션 프리셋, 줄 배치 위치
+│  ├─ PitchCONST.ts           FIFA 경기장 규격(m), 잔디·라인 색
+│  ├─ LayoutCONST.ts          캔버스 크기, 해상도
+│  ├─ PlayerCONST.ts          유니폼 모양, 그림자, 이름 글꼴
+│  ├─ StorageCONST.ts         저장 키, 좌표 정밀도
+│  └─ UICONST.ts              안내 문구, 입력 제한, 토스트 시간
+├─ model/                     데이터와 규칙 (화면을 모름)
+│  ├─ types.ts                상태 타입
+│  ├─ formations.ts           포메이션 위치 계산
+│  ├─ BoardStorage.ts         localStorage 저장, 공유 링크 인코딩
+│  └─ BoardModel.ts           상태 보관과 변경 메서드
+├─ view/                      화면 (Model을 직접 바꾸지 않음)
+│  ├─ PitchView.ts            경기장
+│  ├─ PlayerView.ts           선수 유니폼
+│  ├─ BoardView.ts            Pixi 캔버스, 드래그, 이미지 저장
+│  └─ PanelView.ts            오른쪽 설정 패널
+├─ controller/
+│  └─ BoardController.ts      View 이벤트 → Model 변경 → View 갱신
+└─ style.css
 ```
 
 ## GitHub Pages 배포
