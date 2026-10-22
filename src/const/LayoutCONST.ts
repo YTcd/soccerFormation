@@ -8,4 +8,5 @@ export const CANVAS_WIDTH = FIELD_WIDTH_PX + CANVAS_MARGIN * 2;
 export const CANVAS_HEIGHT = FIELD_HEIGHT_PX + CANVAS_MARGIN * 2;
 
 export const MIN_RENDER_RESOLUTION = 2;
+export const CANVAS_TOUCH_ACTION = 'pan-y';
 export const EXPORT_RESOLUTION = 2;

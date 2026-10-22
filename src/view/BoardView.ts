@@ -3,6 +3,7 @@ import { GOALKEEPER_INDEX, PLAYER_COUNT } from '../const/BoardCONST';
 import {
   CANVAS_HEIGHT,
   CANVAS_MARGIN,
+  CANVAS_TOUCH_ACTION,
   CANVAS_WIDTH,
   EXPORT_RESOLUTION,
   FIELD_HEIGHT_PX,
@@ -47,6 +48,11 @@ export class BoardView {
     app.stage.hitArea = app.screen;
     app.stage.on('globalpointermove', (e) => this.moveDrag(e));
     app.stage.on('pointerup', () => this.endDrag());
+
+    app.canvas.style.touchAction = CANVAS_TOUCH_ACTION;
+    const blockScrollWhileDragging = (e: TouchEvent) => this.drag && e.preventDefault();
+    app.canvas.addEventListener('touchstart', blockScrollWhileDragging, { passive: false });
+    app.canvas.addEventListener('touchmove', blockScrollWhileDragging, { passive: false });
   }
 
   bind(handlers: BoardHandlers) {
