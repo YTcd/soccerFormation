@@ -31,9 +31,9 @@ src/
 │  ├─ BoardCONST.ts           선수 수, 기본 포메이션·색상·이름
 │  ├─ FormationCONST.ts       포메이션 종류, 줄 배치 위치
 │  ├─ PresetCONST.ts          내 프리셋 최대 개수, 기본 이름
-│  ├─ PitchCONST.ts           FIFA 경기장 규격(m), 잔디·라인 색
-│  ├─ LayoutCONST.ts          캔버스 크기, 해상도
-│  ├─ PlayerCONST.ts          유니폼 모양, 그림자, 이름 글꼴
+│  ├─ PitchCONST.ts           축구·풋살 경기장 규격(m), 잔디 색
+│  ├─ LayoutCONST.ts          미터당 픽셀, 캔버스 여백
+│  ├─ PlayerCONST.ts          선수 터치·드래그 영역 크기
 │  ├─ StorageCONST.ts         localStorage 키, 좌표 정밀도
 │  └─ UICONST.ts              안내 문구, 입력 제한, 토스트 시간
 ├─ model/                     데이터와 규칙 (화면을 모름)

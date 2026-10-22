@@ -1,12 +1,6 @@
 import { Application, Container, FederatedPointerEvent, Rectangle } from 'pixi.js';
 import { GOALKEEPER_INDEX, MAX_PLAYER_COUNT } from '../const/BoardCONST';
-import {
-  CANVAS_ASPECT_RATIO_CSS_VAR,
-  CANVAS_MARGIN,
-  CANVAS_TOUCH_ACTION,
-  EXPORT_RESOLUTION,
-  MIN_RENDER_RESOLUTION,
-} from '../const/LayoutCONST';
+import { CANVAS_MARGIN } from '../const/LayoutCONST';
 import { GRASS_COLOR } from '../const/PitchCONST';
 import { PLAYER_BOTTOM, PLAYER_HALF_WIDTH, PLAYER_TOP } from '../const/PlayerCONST';
 import type { BoardState, PitchType, Position } from '../model/types';
@@ -43,7 +37,7 @@ export class BoardView {
       height: layout.canvasHeight,
       antialias: true,
       background: GRASS_COLOR,
-      resolution: Math.max(MIN_RENDER_RESOLUTION, window.devicePixelRatio),
+      resolution: Math.max(2, window.devicePixelRatio),
     });
 
     parent.append(app.canvas);
@@ -106,7 +100,7 @@ export class BoardView {
     const imageDataUrl = await this.app.renderer.extract.base64({
       target: this.app.stage,
       frame: new Rectangle(0, 0, this.layout.canvasWidth, this.layout.canvasHeight),
-      resolution: EXPORT_RESOLUTION,
+      resolution: 2,
       format: 'png',
     });
 
@@ -140,12 +134,12 @@ export class BoardView {
 
   private updateCanvasAspectRatio() {
     const aspectRatio = `${this.layout.canvasWidth} / ${this.layout.canvasHeight}`;
-    this.app.canvas.parentElement?.style.setProperty(CANVAS_ASPECT_RATIO_CSS_VAR, aspectRatio);
+    this.app.canvas.parentElement?.style.setProperty('--canvas-aspect-ratio', aspectRatio);
   }
 
   private blockTouchScrollWhileDragging() {
     const canvas = this.app.canvas;
-    canvas.style.touchAction = CANVAS_TOUCH_ACTION;
+    canvas.style.touchAction = 'pan-y';
 
     const preventScrollIfDragging = (e: TouchEvent) => {
       if (this.drag) {

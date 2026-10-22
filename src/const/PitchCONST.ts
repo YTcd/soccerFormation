@@ -32,9 +32,3 @@ export const FUTSAL_SECOND_PENALTY_SPOT_DISTANCE_M = 10;
 export const FUTSAL_CORNER_ARC_RADIUS_M = 0.25;
 
 export const GRASS_COLOR = 0x2e7d32;
-export const GRASS_STRIPE_COLOR = 0x388e3c;
-export const GRASS_STRIPE_COUNT = 14;
-export const LINE_WIDTH = 2;
-export const LINE_COLOR = 0xffffff;
-export const LINE_ALPHA = 0.9;
-export const SPOT_RADIUS_PX = 3;

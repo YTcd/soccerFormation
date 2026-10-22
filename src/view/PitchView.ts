@@ -10,11 +10,6 @@ import {
   FUTSAL_PENALTY_SPOT_DISTANCE_M,
   FUTSAL_SECOND_PENALTY_SPOT_DISTANCE_M,
   GRASS_COLOR,
-  GRASS_STRIPE_COLOR,
-  GRASS_STRIPE_COUNT,
-  LINE_ALPHA,
-  LINE_COLOR,
-  LINE_WIDTH,
   SOCCER_CENTER_CIRCLE_RADIUS_M,
   SOCCER_CORNER_ARC_RADIUS_M,
   SOCCER_GOAL_AREA_DEPTH_M,
@@ -25,12 +20,14 @@ import {
   SOCCER_PENALTY_AREA_DEPTH_M,
   SOCCER_PENALTY_AREA_WIDTH_M,
   SOCCER_PENALTY_SPOT_DISTANCE_M,
-  SPOT_RADIUS_PX,
 } from '../const/PitchCONST';
 import type { PitchType } from '../model/types';
 import { PITCH_LAYOUTS, type PitchLayout } from './pitchLayout';
 
-const LINE_STYLE = { width: LINE_WIDTH, color: LINE_COLOR, alpha: LINE_ALPHA };
+const GRASS_STRIPE_COLOR = 0x388e3c;
+const GRASS_STRIPE_COUNT = 14;
+const LINE_STYLE = { width: 2, color: 0xffffff, alpha: 0.9 };
+const SPOT_RADIUS_PX = 3;
 
 export class PitchView extends Container {
   private readonly layout: PitchLayout;
@@ -89,7 +86,7 @@ export class PitchView extends Container {
     graphics.rect(0, 0, fieldWidthPx, fieldHeightPx).stroke(LINE_STYLE);
     graphics.moveTo(0, halfwayY).lineTo(fieldWidthPx, halfwayY).stroke(LINE_STYLE);
     graphics.circle(centerX, halfwayY, this.metersToPx(centerCircleRadiusM)).stroke(LINE_STYLE);
-    graphics.circle(centerX, halfwayY, SPOT_RADIUS_PX).fill(LINE_COLOR);
+    graphics.circle(centerX, halfwayY, SPOT_RADIUS_PX).fill(LINE_STYLE.color);
   }
 
   private drawSoccerGoalSide(graphics: Graphics, isTopSide: boolean) {
@@ -154,7 +151,7 @@ export class PitchView extends Container {
     const centerX = this.layout.fieldWidthPx / 2;
     const y = this.distanceFromGoalLineToY(isTopSide, distanceFromGoalLineM);
 
-    graphics.circle(centerX, y, SPOT_RADIUS_PX).fill(LINE_COLOR);
+    graphics.circle(centerX, y, SPOT_RADIUS_PX).fill(LINE_STYLE.color);
   }
 
   private drawCornerArcs(graphics: Graphics, radiusM: number) {

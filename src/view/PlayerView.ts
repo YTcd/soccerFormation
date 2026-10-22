@@ -1,32 +1,20 @@
 import { Container, Graphics, Rectangle, Text } from 'pixi.js';
-import {
-  DARK_TEXT_COLOR,
-  JERSEY_BORDER_ALPHA,
-  JERSEY_BORDER_COLOR,
-  JERSEY_BORDER_WIDTH,
-  JERSEY_COLLAR_DIP_Y,
-  JERSEY_COLLAR_X,
-  JERSEY_COLLAR_Y,
-  JERSEY_OUTLINE,
-  JERSEY_TRIM_ALPHA,
-  JERSEY_TRIM_DIP_Y,
-  JERSEY_TRIM_WIDTH,
-  LIGHT_JERSEY_BRIGHTNESS,
-  LIGHT_TEXT_COLOR,
-  NAME_FONT_FAMILY,
-  NAME_FONT_SIZE,
-  NAME_FONT_WEIGHT,
-  NAME_MAX_WIDTH,
-  NAME_OFFSET_Y,
-  PLAYER_BOTTOM,
-  PLAYER_HALF_WIDTH,
-  PLAYER_TOP,
-  SHADOW_ALPHA,
-  SHADOW_COLOR,
-  SHADOW_RADIUS_X,
-  SHADOW_RADIUS_Y,
-  SHADOW_Y,
-} from '../const/PlayerCONST';
+import { PLAYER_BOTTOM, PLAYER_HALF_WIDTH, PLAYER_TOP } from '../const/PlayerCONST';
+
+const COLLAR_X = 10;
+const COLLAR_Y = -30;
+const JERSEY_OUTLINE = [
+  [24, -27], [38, -12], [29, -3], [22, -10],
+  [22, 30], [-22, 30],
+  [-22, -10], [-29, -3], [-38, -12], [-24, -27],
+] as const;
+
+const NAME_FONT_FAMILY = ['-apple-system', 'BlinkMacSystemFont', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', 'sans-serif'];
+const NAME_MAX_WIDTH = 40;
+
+const LIGHT_JERSEY_BRIGHTNESS = 160;
+const DARK_TEXT_COLOR = '#111111';
+const LIGHT_TEXT_COLOR = '#ffffff';
 
 export class PlayerView extends Container {
   private readonly jersey = new Graphics();
@@ -34,8 +22,8 @@ export class PlayerView extends Container {
     text: '',
     style: {
       fontFamily: NAME_FONT_FAMILY,
-      fontSize: NAME_FONT_SIZE,
-      fontWeight: NAME_FONT_WEIGHT,
+      fontSize: 14,
+      fontWeight: '700',
       fill: LIGHT_TEXT_COLOR,
     },
   });
@@ -43,12 +31,10 @@ export class PlayerView extends Container {
   constructor(readonly index: number) {
     super();
 
-    const shadow = new Graphics()
-      .ellipse(0, SHADOW_Y, SHADOW_RADIUS_X, SHADOW_RADIUS_Y)
-      .fill({ color: SHADOW_COLOR, alpha: SHADOW_ALPHA });
+    const shadow = new Graphics().ellipse(0, 33, 26, 5).fill({ color: 0x000000, alpha: 0.25 });
 
     this.nameText.anchor.set(0.5);
-    this.nameText.y = NAME_OFFSET_Y;
+    this.nameText.y = 6;
 
     this.addChild(shadow, this.jersey, this.nameText);
 
@@ -78,9 +64,7 @@ export class PlayerView extends Container {
   private drawJersey(jerseyColor: string, trimColor: string) {
     const graphics = this.jersey.clear();
 
-    graphics
-      .moveTo(-JERSEY_COLLAR_X, JERSEY_COLLAR_Y)
-      .quadraticCurveTo(0, JERSEY_COLLAR_DIP_Y, JERSEY_COLLAR_X, JERSEY_COLLAR_Y);
+    graphics.moveTo(-COLLAR_X, COLLAR_Y).quadraticCurveTo(0, -20, COLLAR_X, COLLAR_Y);
 
     for (const [x, y] of JERSEY_OUTLINE) {
       graphics.lineTo(x, y);
@@ -89,12 +73,12 @@ export class PlayerView extends Container {
     graphics
       .closePath()
       .fill(jerseyColor)
-      .stroke({ width: JERSEY_BORDER_WIDTH, color: JERSEY_BORDER_COLOR, alpha: JERSEY_BORDER_ALPHA, join: 'round' });
+      .stroke({ width: 2, color: 0x000000, alpha: 0.35, join: 'round' });
 
     graphics
-      .moveTo(-JERSEY_COLLAR_X, JERSEY_COLLAR_Y)
-      .quadraticCurveTo(0, JERSEY_TRIM_DIP_Y, JERSEY_COLLAR_X, JERSEY_COLLAR_Y)
-      .stroke({ width: JERSEY_TRIM_WIDTH, color: trimColor, alpha: JERSEY_TRIM_ALPHA });
+      .moveTo(-COLLAR_X, COLLAR_Y)
+      .quadraticCurveTo(0, -18, COLLAR_X, COLLAR_Y)
+      .stroke({ width: 3, color: trimColor, alpha: 0.5 });
   }
 }
 
