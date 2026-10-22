@@ -34,7 +34,7 @@ main {
 }
 
 .board {
-  width: min(100%, calc((100dvh - 110px) * 672 / 1005));
+  width: min(100%, calc((100dvh - 110px) * var(--canvas-aspect-ratio)));
   flex-shrink: 0;
 }
 

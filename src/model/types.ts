@@ -1,6 +1,10 @@
-import type { FORMATIONS } from '../const/FormationCONST';
+import type { FORMATIONS, FORMATIONS_BY_TEAM_SIZE } from '../const/FormationCONST';
+
+export type TeamSize = keyof typeof FORMATIONS_BY_TEAM_SIZE;
 
 export type FormationName = keyof typeof FORMATIONS;
+
+export type PitchType = 'soccer' | 'futsal';
 
 export type Position = { x: number; y: number };
 

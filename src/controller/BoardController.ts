@@ -33,6 +33,7 @@ export class BoardController {
         this.panel.showToast(SHARED_SAVED_MESSAGE);
       },
       onSharedLeave: () => this.changeAndRefresh(() => model.leaveSharedView()),
+      onTeamSizeChange: (teamSize) => this.changeAndRefresh(() => model.setTeamSize(teamSize)),
       onFormationChange: (name) => this.changeAndRefresh(() => model.setFormation(name)),
       onColorChange: (key, value) => this.changeAndRefresh(() => model.setColor(key, value)),
       onPlayerNameChange: (index, name) => this.changeAndRefresh(() => model.setPlayerName(index, name)),

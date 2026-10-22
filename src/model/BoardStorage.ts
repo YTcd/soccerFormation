@@ -1,7 +1,6 @@
-import { PLAYER_COUNT } from '../const/BoardCONST';
-import { FORMATIONS } from '../const/FormationCONST';
 import { MAX_PRESET_COUNT } from '../const/PresetCONST';
 import { ACTIVE_PRESET_KEY, COORDINATE_PRECISION, HEX_COLOR_PATTERN, PRESET_KEY_PREFIX } from '../const/StorageCONST';
+import { getTeamSize, isFormationName } from './formations';
 import type { BoardState } from './types';
 
 export class BoardStorage {
@@ -104,19 +103,18 @@ function parseValidState(parse: () => unknown): BoardState | null {
 }
 
 function isBoardState(value: any): value is BoardState {
-  if (!value) {
+  if (!value || !isFormationName(value.formation)) {
     return false;
   }
 
   const hasValidInfo =
     typeof value.name === 'string' &&
-    value.formation in FORMATIONS &&
     isHexColor(value.color) &&
     isHexColor(value.gkColor);
 
   const hasValidPlayers =
     Array.isArray(value.players) &&
-    value.players.length === PLAYER_COUNT &&
+    value.players.length === getTeamSize(value.formation) &&
     value.players.every(isPlayer);
 
   return hasValidInfo && hasValidPlayers;

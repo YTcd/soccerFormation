@@ -1,5 +1,5 @@
-import { GOALKEEPER_INDEX, PLAYER_COUNT } from '../const/BoardCONST';
-import { FORMATION_NAMES } from '../const/FormationCONST';
+import { GOALKEEPER_INDEX, MAX_PLAYER_COUNT } from '../const/BoardCONST';
+import { TEAM_SIZES } from '../const/FormationCONST';
 import { BASE_PRESET_SLOT } from '../const/PresetCONST';
 import {
   ADD_PRESET_OPTION_LABEL,
@@ -13,7 +13,8 @@ import {
   RESET_CONFIRM_MESSAGE,
   TOAST_DURATION_MS,
 } from '../const/UICONST';
-import type { BoardState, ColorKey, FormationName, PresetSummary } from '../model/types';
+import { getFormationNames, getTeamSize } from '../model/formations';
+import type { BoardState, ColorKey, FormationName, PresetSummary, TeamSize } from '../model/types';
 
 export type PanelHandlers = {
   onPresetSelect(slot: number): void;
@@ -22,6 +23,7 @@ export type PanelHandlers = {
   onPresetDelete(): void;
   onSharedSave(): void;
   onSharedLeave(): void;
+  onTeamSizeChange(teamSize: TeamSize): void;
   onFormationChange(name: FormationName): void;
   onColorChange(key: ColorKey, value: string): void;
   onPlayerNameChange(index: number, name: string): void;
@@ -54,6 +56,7 @@ export class PanelView {
   private readonly sharedFullMessage = getElement('sharedFull');
 
   private readonly editor = getElement<HTMLFieldSetElement>('editor');
+  private readonly teamSizeSelect = getElement<HTMLSelectElement>('teamSize');
   private readonly formationSelect = getElement<HTMLSelectElement>('formation');
   private readonly colorInputs: Record<ColorKey, HTMLInputElement> = {
     color: getElement('color'),
@@ -69,11 +72,11 @@ export class PanelView {
     this.presetNameInput.maxLength = PRESET_NAME_MAX_LENGTH;
     this.sharedFullMessage.textContent = PRESETS_FULL_MESSAGE;
 
-    for (const name of FORMATION_NAMES) {
-      this.formationSelect.add(new Option(name, name));
+    for (const teamSize of TEAM_SIZES) {
+      this.teamSizeSelect.add(new Option(`${teamSize}:${teamSize}`, String(teamSize)));
     }
 
-    for (let i = 0; i < PLAYER_COUNT; i++) {
+    for (let i = 0; i < MAX_PLAYER_COUNT; i++) {
       this.playerNameInputs.push(this.createPlayerNameInput(i));
     }
   }
@@ -96,12 +99,16 @@ export class PanelView {
     this.editor.disabled = isSharedView;
     this.resetButton.disabled = isSharedView;
 
-    this.formationSelect.value = state.formation;
+    this.renderFormationSelector(state.formation);
     this.colorInputs.color.value = state.color;
     this.colorInputs.gkColor.value = state.gkColor;
 
     for (let i = 0; i < this.playerNameInputs.length; i++) {
-      this.playerNameInputs[i].value = state.players[i].name;
+      const input = this.playerNameInputs[i];
+      const isInTeam = i < state.players.length;
+
+      input.parentElement!.hidden = !isInTeam;
+      input.value = isInTeam ? state.players[i].name : '';
     }
   }
 
@@ -142,6 +149,10 @@ export class PanelView {
   }
 
   private bindEditorEvents(handlers: PanelHandlers) {
+    this.teamSizeSelect.addEventListener('change', () => {
+      handlers.onTeamSizeChange(Number(this.teamSizeSelect.value) as TeamSize);
+    });
+
     this.formationSelect.addEventListener('change', () => {
       handlers.onFormationChange(this.formationSelect.value as FormationName);
     });
@@ -183,6 +194,15 @@ export class PanelView {
     const activePreset = presets.find((preset) => preset.slot === activeSlot);
     this.presetNameInput.value = activePreset?.name ?? '';
     this.presetDeleteButton.disabled = activeSlot === BASE_PRESET_SLOT;
+  }
+
+  private renderFormationSelector(formation: FormationName) {
+    const teamSize = getTeamSize(formation);
+    this.teamSizeSelect.value = String(teamSize);
+
+    const formationOptions = getFormationNames(teamSize).map((name) => new Option(name, name));
+    this.formationSelect.replaceChildren(...formationOptions);
+    this.formationSelect.value = formation;
   }
 
   private createPlayerNameInput(index: number): HTMLInputElement {

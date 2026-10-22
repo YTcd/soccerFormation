@@ -1,18 +1,16 @@
 import { Application, Container, FederatedPointerEvent, Rectangle } from 'pixi.js';
-import { GOALKEEPER_INDEX, PLAYER_COUNT } from '../const/BoardCONST';
+import { GOALKEEPER_INDEX, MAX_PLAYER_COUNT } from '../const/BoardCONST';
 import {
-  CANVAS_HEIGHT,
+  CANVAS_ASPECT_RATIO_CSS_VAR,
   CANVAS_MARGIN,
   CANVAS_TOUCH_ACTION,
-  CANVAS_WIDTH,
   EXPORT_RESOLUTION,
-  FIELD_HEIGHT_PX,
-  FIELD_WIDTH_PX,
   MIN_RENDER_RESOLUTION,
 } from '../const/LayoutCONST';
 import { GRASS_COLOR } from '../const/PitchCONST';
 import { PLAYER_BOTTOM, PLAYER_HALF_WIDTH, PLAYER_TOP } from '../const/PlayerCONST';
-import type { BoardState, Position } from '../model/types';
+import type { BoardState, PitchType, Position } from '../model/types';
+import { getPitchType, PITCH_LAYOUTS, type PitchLayout } from './pitchLayout';
 import { PitchView } from './PitchView';
 import { PlayerView } from './PlayerView';
 
@@ -26,18 +24,23 @@ type Drag = {
   offsetY: number;
 };
 
+const INITIAL_PITCH_TYPE: PitchType = 'soccer';
+
 export class BoardView {
   private readonly playerLayer = new Container();
   private readonly players: PlayerView[] = [];
+  private pitchType = INITIAL_PITCH_TYPE;
+  private pitchView = new PitchView(INITIAL_PITCH_TYPE);
   private drag: Drag | null = null;
   private handlers?: BoardHandlers;
 
   static async create(parent: HTMLElement): Promise<BoardView> {
     const app = new Application();
+    const layout = PITCH_LAYOUTS[INITIAL_PITCH_TYPE];
 
     await app.init({
-      width: CANVAS_WIDTH,
-      height: CANVAS_HEIGHT,
+      width: layout.canvasWidth,
+      height: layout.canvasHeight,
       antialias: true,
       background: GRASS_COLOR,
       resolution: Math.max(MIN_RENDER_RESOLUTION, window.devicePixelRatio),
@@ -49,12 +52,17 @@ export class BoardView {
   }
 
   private constructor(private readonly app: Application) {
-    for (let i = 0; i < PLAYER_COUNT; i++) {
+    for (let i = 0; i < MAX_PLAYER_COUNT; i++) {
       this.players.push(this.createPlayer(i));
     }
 
     this.setupStage();
     this.blockTouchScrollWhileDragging();
+    this.updateCanvasAspectRatio();
+  }
+
+  private get layout(): PitchLayout {
+    return PITCH_LAYOUTS[this.pitchType];
   }
 
   setHandlers(handlers: BoardHandlers) {
@@ -62,15 +70,26 @@ export class BoardView {
   }
 
   render(state: Readonly<BoardState>) {
-    for (let i = 0; i < state.players.length; i++) {
-      const playerState = state.players[i];
-      const playerView = this.players[i];
+    const pitchType = getPitchType(state.formation);
+    if (pitchType !== this.pitchType) {
+      this.changePitch(pitchType);
+    }
 
+    for (let i = 0; i < this.players.length; i++) {
+      const playerView = this.players[i];
+      const isInTeam = i < state.players.length;
+
+      playerView.visible = isInTeam;
+      if (!isInTeam) {
+        continue;
+      }
+
+      const playerState = state.players[i];
       const isGoalkeeper = i === GOALKEEPER_INDEX;
       const color = isGoalkeeper ? state.gkColor : state.color;
       playerView.updateAppearance(playerState.name, color);
 
-      const canvasPosition = toCanvasPosition(playerState);
+      const canvasPosition = toCanvasPosition(playerState, this.layout);
       playerView.position.set(canvasPosition.x, canvasPosition.y);
     }
   }
@@ -86,7 +105,7 @@ export class BoardView {
   async saveImage(filename: string) {
     const imageDataUrl = await this.app.renderer.extract.base64({
       target: this.app.stage,
-      frame: new Rectangle(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT),
+      frame: new Rectangle(0, 0, this.layout.canvasWidth, this.layout.canvasHeight),
       resolution: EXPORT_RESOLUTION,
       format: 'png',
     });
@@ -100,11 +119,28 @@ export class BoardView {
   private setupStage() {
     const stage = this.app.stage;
 
-    stage.addChild(new PitchView(), this.playerLayer);
+    stage.addChild(this.pitchView, this.playerLayer);
     stage.eventMode = 'static';
     stage.hitArea = this.app.screen;
     stage.on('globalpointermove', (e) => this.moveDrag(e));
     stage.on('pointerup', () => this.endDrag());
+  }
+
+  private changePitch(pitchType: PitchType) {
+    this.pitchType = pitchType;
+
+    this.app.stage.removeChild(this.pitchView);
+    this.pitchView.destroy({ children: true });
+    this.pitchView = new PitchView(pitchType);
+    this.app.stage.addChildAt(this.pitchView, 0);
+
+    this.app.renderer.resize(this.layout.canvasWidth, this.layout.canvasHeight);
+    this.updateCanvasAspectRatio();
+  }
+
+  private updateCanvasAspectRatio() {
+    const aspectRatio = `${this.layout.canvasWidth} / ${this.layout.canvasHeight}`;
+    this.app.canvas.parentElement?.style.setProperty(CANVAS_ASPECT_RATIO_CSS_VAR, aspectRatio);
   }
 
   private blockTouchScrollWhileDragging() {
@@ -149,9 +185,10 @@ export class BoardView {
       return;
     }
 
+    const { canvasWidth, canvasHeight } = this.layout;
     const { player, offsetX, offsetY } = this.drag;
-    const x = clamp(e.global.x + offsetX, PLAYER_HALF_WIDTH, CANVAS_WIDTH - PLAYER_HALF_WIDTH);
-    const y = clamp(e.global.y + offsetY, PLAYER_TOP, CANVAS_HEIGHT - PLAYER_BOTTOM);
+    const x = clamp(e.global.x + offsetX, PLAYER_HALF_WIDTH, canvasWidth - PLAYER_HALF_WIDTH);
+    const y = clamp(e.global.y + offsetY, PLAYER_TOP, canvasHeight - PLAYER_BOTTOM);
 
     player.position.set(x, y);
   }
@@ -165,22 +202,22 @@ export class BoardView {
     player.cursor = 'grab';
     this.drag = null;
 
-    const fieldPosition = toFieldPosition(player.position);
+    const fieldPosition = toFieldPosition(player.position, this.layout);
     this.handlers?.onPlayerMove(player.index, fieldPosition);
   }
 }
 
-function toCanvasPosition(fieldPosition: Position): Position {
+function toCanvasPosition(fieldPosition: Position, layout: PitchLayout): Position {
   return {
-    x: CANVAS_MARGIN + fieldPosition.x * FIELD_WIDTH_PX,
-    y: CANVAS_MARGIN + fieldPosition.y * FIELD_HEIGHT_PX,
+    x: CANVAS_MARGIN + fieldPosition.x * layout.fieldWidthPx,
+    y: CANVAS_MARGIN + fieldPosition.y * layout.fieldHeightPx,
   };
 }
 
-function toFieldPosition(canvasPosition: Position): Position {
+function toFieldPosition(canvasPosition: Position, layout: PitchLayout): Position {
   return {
-    x: (canvasPosition.x - CANVAS_MARGIN) / FIELD_WIDTH_PX,
-    y: (canvasPosition.y - CANVAS_MARGIN) / FIELD_HEIGHT_PX,
+    x: (canvasPosition.x - CANVAS_MARGIN) / layout.fieldWidthPx,
+    y: (canvasPosition.y - CANVAS_MARGIN) / layout.fieldHeightPx,
   };
 }
 

@@ -1,13 +1,13 @@
 import {
-  DEFAULT_FORMATION,
   DEFAULT_GK_JERSEY_COLOR,
   DEFAULT_JERSEY_COLOR,
   DEFAULT_PLAYER_NAME_PREFIX,
+  DEFAULT_TEAM_SIZE,
 } from '../const/BoardCONST';
 import { BASE_PRESET_SLOT, DEFAULT_PRESET_NAME_PREFIX, MAX_PRESET_COUNT } from '../const/PresetCONST';
 import { BoardStorage } from './BoardStorage';
-import { getFormationPositions } from './formations';
-import type { BoardState, ColorKey, FormationName, Position, PresetSummary } from './types';
+import { getDefaultFormation, getFormationPositions, getTeamSize } from './formations';
+import type { BoardState, ColorKey, FormationName, Position, PresetSummary, TeamSize } from './types';
 
 export class BoardModel {
   private readonly presets: Map<number, BoardState>;
@@ -103,15 +103,19 @@ export class BoardModel {
     this.storage.clearSharedStateFromUrl();
   }
 
+  setTeamSize(teamSize: TeamSize) {
+    this.setFormation(getDefaultFormation(teamSize));
+  }
+
   setFormation(name: FormationName) {
     this.editActivePreset((preset) => {
-      preset.formation = name;
-
       const positions = getFormationPositions(name);
-      for (let i = 0; i < positions.length; i++) {
-        preset.players[i].x = positions[i].x;
-        preset.players[i].y = positions[i].y;
-      }
+
+      preset.formation = name;
+      preset.players = positions.map((position, i) => ({
+        name: preset.players[i]?.name ?? getDefaultPlayerName(i),
+        ...position,
+      }));
     });
   }
 
@@ -139,7 +143,8 @@ export class BoardModel {
       return;
     }
 
-    const defaultPreset = createDefaultPreset(this.currentSlot);
+    const currentTeamSize = getTeamSize(this.activePreset.formation);
+    const defaultPreset = createDefaultPreset(this.currentSlot, currentTeamSize);
     const currentName = this.activePreset.name;
     this.savePreset(this.currentSlot, { ...defaultPreset, name: currentName });
   }
@@ -177,18 +182,23 @@ export class BoardModel {
   }
 }
 
-function createDefaultPreset(slot: number): BoardState {
-  const positions = getFormationPositions(DEFAULT_FORMATION);
+function createDefaultPreset(slot: number, teamSize: TeamSize = DEFAULT_TEAM_SIZE): BoardState {
+  const formation = getDefaultFormation(teamSize);
+  const positions = getFormationPositions(formation);
   const players = positions.map((position, i) => ({
-    name: `${DEFAULT_PLAYER_NAME_PREFIX}${i + 1}`,
+    name: getDefaultPlayerName(i),
     ...position,
   }));
 
   return {
     name: `${DEFAULT_PRESET_NAME_PREFIX}${slot}`,
-    formation: DEFAULT_FORMATION,
+    formation,
     color: DEFAULT_JERSEY_COLOR,
     gkColor: DEFAULT_GK_JERSEY_COLOR,
     players,
   };
+}
+
+function getDefaultPlayerName(index: number): string {
+  return `${DEFAULT_PLAYER_NAME_PREFIX}${index + 1}`;
 }
