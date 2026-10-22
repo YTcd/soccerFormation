@@ -5,6 +5,7 @@ import {
   SHARE_FALLBACK_MESSAGE,
   SHARED_SAVED_MESSAGE,
 } from '../const/UICONST';
+import { SHARE_QUERY_KEY } from '../const/StorageCONST';
 import type { BoardModel } from '../model/BoardModel';
 import type { BoardView } from '../view/BoardView';
 import type { PanelView } from '../view/PanelView';
@@ -42,10 +43,6 @@ export class BoardController {
       onDownload: () => this.downloadImage(),
     });
 
-    window.addEventListener('hashchange', () => {
-      this.changeAndRefresh(() => model.openSharedLink());
-    });
-
     this.refreshViews();
   }
 
@@ -70,7 +67,7 @@ export class BoardController {
   }
 
   private async copyShareLink() {
-    const shareUrl = `${location.origin}${location.pathname}#${this.model.createShareHash()}`;
+    const shareUrl = `${location.origin}${location.pathname}?${SHARE_QUERY_KEY}=${this.model.createShareCode()}`;
 
     try {
       await navigator.clipboard.writeText(shareUrl);

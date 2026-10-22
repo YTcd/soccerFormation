@@ -149,8 +149,8 @@ export class BoardModel {
     this.savePreset(this.currentSlot, { ...defaultPreset, name: currentName });
   }
 
-  createShareHash(): string {
-    return this.storage.encodeShareHash(this.state);
+  createShareCode(): string {
+    return this.storage.encodeShareCode(this.state);
   }
 
   private get activePreset(): BoardState {

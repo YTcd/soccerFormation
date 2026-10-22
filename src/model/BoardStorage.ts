@@ -1,5 +1,11 @@
 import { MAX_PRESET_COUNT } from '../const/PresetCONST';
-import { ACTIVE_PRESET_KEY, COORDINATE_PRECISION, HEX_COLOR_PATTERN, PRESET_KEY_PREFIX } from '../const/StorageCONST';
+import {
+  ACTIVE_PRESET_KEY,
+  COORDINATE_PRECISION,
+  HEX_COLOR_PATTERN,
+  PRESET_KEY_PREFIX,
+  SHARE_QUERY_KEY,
+} from '../const/StorageCONST';
 import { getTeamSize, isFormationName } from './formations';
 import type { BoardState } from './types';
 
@@ -38,21 +44,23 @@ export class BoardStorage {
   }
 
   readSharedStateFromUrl(): BoardState | null {
-    const hash = location.hash.slice(1);
-    if (!hash) {
+    const code = new URLSearchParams(location.search).get(SHARE_QUERY_KEY);
+    if (!code) {
       return null;
     }
 
-    return parseValidState(() => decodeShareHash(hash));
+    return parseValidState(() => decodeShareCode(code));
   }
 
   clearSharedStateFromUrl() {
-    if (location.hash) {
-      history.replaceState(null, '', location.pathname + location.search);
+    const url = new URL(location.href);
+    if (url.searchParams.has(SHARE_QUERY_KEY)) {
+      url.searchParams.delete(SHARE_QUERY_KEY);
+      history.replaceState(null, '', url);
     }
   }
 
-  encodeShareHash(state: BoardState): string {
+  encodeShareCode(state: BoardState): string {
     const json = serializeState(state);
     const bytes = new TextEncoder().encode(json);
     const base64 = btoa(String.fromCharCode(...bytes));
@@ -61,8 +69,8 @@ export class BoardStorage {
   }
 }
 
-function decodeShareHash(hash: string): unknown {
-  const binary = atob(fromBase64Url(hash));
+function decodeShareCode(code: string): unknown {
+  const binary = atob(fromBase64Url(code));
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
