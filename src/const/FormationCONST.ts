@@ -1,4 +1,3 @@
-/** Players per row from defense to attack (goalkeeper excluded). */
 export const FORMATIONS = {
   '4-4-2': [4, 4, 2],
   '4-3-3': [4, 3, 3],
@@ -12,7 +11,6 @@ export const FORMATIONS = {
 
 export const FORMATION_NAMES = Object.keys(FORMATIONS) as (keyof typeof FORMATIONS)[];
 
-// Where formation rows are placed, normalized to the field (0 = top goal line, 1 = bottom goal line).
 export const GOALKEEPER_X = 0.5;
 export const GOALKEEPER_Y = 0.92;
 export const BACK_LINE_Y = 0.76;

@@ -40,7 +40,6 @@ export type PanelData = {
 
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
-/** The side panel (presets, formation, colors, names, buttons) built on the markup in index.html. */
 export class PanelView {
   private readonly presetSection = byId('presetSection');
   private readonly preset = byId<HTMLSelectElement>('preset');
@@ -96,7 +95,6 @@ export class PanelView {
     });
   }
 
-  /** Fills every control from the data. */
   sync({ state, presets, activeSlot, isSharedView, canAddPreset }: PanelData) {
     this.syncPresets(presets, activeSlot, canAddPreset);
 
@@ -120,7 +118,6 @@ export class PanelView {
     this.toastTimer = setTimeout(() => (this.toastEl.textContent = ''), TOAST_DURATION_MS);
   }
 
-  /** Preset dropdown: saved presets in slot order, then the add option while there is room. */
   private syncPresets(presets: PresetSummary[], activeSlot: number, canAddPreset: boolean) {
     this.preset.replaceChildren(...presets.map((p) => new Option(p.name || `#${p.slot}`, String(p.slot))));
     if (canAddPreset) this.preset.add(new Option(ADD_PRESET_OPTION_LABEL, ADD_PRESET_OPTION_VALUE));

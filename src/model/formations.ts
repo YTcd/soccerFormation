@@ -1,7 +1,6 @@
 import { BACK_LINE_Y, FORMATIONS, FRONT_LINE_Y, GOALKEEPER_X, GOALKEEPER_Y, SIDE_PADDING_X } from '../const/FormationCONST';
 import type { FormationName, Position } from './types';
 
-/** Player positions for a formation, goalkeeper first. Our goal is at the bottom. */
 export function formationPositions(name: FormationName): Position[] {
   const rows: readonly number[] = FORMATIONS[name];
   const positions = [{ x: GOALKEEPER_X, y: GOALKEEPER_Y }];

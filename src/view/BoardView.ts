@@ -21,14 +21,12 @@ export type BoardHandlers = {
 
 type Drag = { player: PlayerView; dx: number; dy: number };
 
-/** The Pixi canvas: pitch, draggable players and PNG export. */
 export class BoardView {
   private readonly playerLayer = new Container();
   private readonly players: PlayerView[];
   private drag: Drag | null = null;
   private handlers?: BoardHandlers;
 
-  /** Pixi needs an async init, so instances are made through create(). */
   static async create(parent: HTMLElement): Promise<BoardView> {
     const app = new Application();
     await app.init({
@@ -63,12 +61,10 @@ export class BoardView {
     });
   }
 
-  /** Locks dragging while a read-only (shared) board is shown. */
   setEditable(editable: boolean) {
     for (const player of this.players) player.eventMode = editable ? 'static' : 'none';
   }
 
-  /** Downloads the whole board as a PNG. */
   async saveImage(filename: string) {
     const a = document.createElement('a');
     a.href = await this.app.renderer.extract.base64({
@@ -92,11 +88,10 @@ export class BoardView {
 
   private startDrag(e: FederatedPointerEvent, player: PlayerView) {
     this.drag = { player, dx: player.x - e.global.x, dy: player.y - e.global.y };
-    this.playerLayer.addChild(player); // bring to front
+    this.playerLayer.addChild(player);
     player.cursor = 'grabbing';
   }
 
-  // Keeps the whole jersey inside the canvas.
   private moveDrag(e: FederatedPointerEvent) {
     if (!this.drag) return;
     const { player, dx, dy } = this.drag;

@@ -28,7 +28,6 @@ import {
   SHADOW_Y,
 } from '../const/PlayerCONST';
 
-/** A jersey with the player's name on the chest. Its origin is the jersey center. */
 export class PlayerView extends Container {
   private readonly jersey = new Graphics();
   private readonly nameText = new Text({
@@ -49,7 +48,6 @@ export class PlayerView extends Container {
     this.cursor = 'grab';
   }
 
-  /** Redraws the jersey; long names shrink to fit the chest. */
   update(name: string, color: string) {
     const textColor = contrastTextColor(color);
     this.drawJersey(color, textColor);
@@ -73,7 +71,6 @@ export class PlayerView extends Container {
   }
 }
 
-/** Dark or light text, whichever reads better on the given jersey color. */
 function contrastTextColor(hex: string): string {
   const n = parseInt(hex.slice(1), 16);
   const brightness = 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255);

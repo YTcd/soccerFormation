@@ -28,7 +28,6 @@ const HALFWAY_M = FIELD_LENGTH_M / 2;
 
 const m = (meters: number) => meters * PX_PER_METER;
 
-/** Striped grass with FIFA-proportioned markings, laid out vertically. */
 export class PitchView extends Container {
   constructor() {
     super();
@@ -44,7 +43,6 @@ export class PitchView extends Container {
     return g;
   }
 
-  /** All markings are drawn in meters relative to the top-left corner of the field. */
   private createMarkings(): Graphics {
     const g = new Graphics();
     g.position.set(CANVAS_MARGIN, CANVAS_MARGIN);
@@ -62,19 +60,17 @@ export class PitchView extends Container {
     g.circle(m(CENTER_X_M), m(HALFWAY_M), SPOT_RADIUS_PX).fill(LINE_COLOR);
   }
 
-  /** Penalty box, goal box, goal, penalty spot and arc for one end. */
   private drawGoalArea(g: Graphics, top: boolean) {
-    const y = (d: number) => m(top ? d : FIELD_LENGTH_M - d); // d = distance from the goal line
+    const y = (d: number) => m(top ? d : FIELD_LENGTH_M - d);
     const box = (width: number, depth: number) =>
       g.rect(m(CENTER_X_M - width / 2), Math.min(y(0), y(depth)), m(width), m(depth)).stroke(LINE);
 
     box(PENALTY_AREA_WIDTH_M, PENALTY_AREA_DEPTH_M);
     box(GOAL_AREA_WIDTH_M, GOAL_AREA_DEPTH_M);
     g.rect(m(CENTER_X_M - GOAL_WIDTH_M / 2), top ? -m(GOAL_DEPTH_M) : m(FIELD_LENGTH_M), m(GOAL_WIDTH_M), m(GOAL_DEPTH_M))
-      .stroke(LINE); // the goal sits behind the goal line
+      .stroke(LINE);
     g.circle(m(CENTER_X_M), y(PENALTY_SPOT_DISTANCE_M), SPOT_RADIUS_PX).fill(LINE_COLOR);
 
-    // Only the part of the arc outside the penalty box is drawn.
     const half = Math.acos((PENALTY_AREA_DEPTH_M - PENALTY_SPOT_DISTANCE_M) / PENALTY_ARC_RADIUS_M);
     const dir = top ? Math.PI / 2 : -Math.PI / 2;
     this.drawArc(g, m(CENTER_X_M), y(PENALTY_SPOT_DISTANCE_M), m(PENALTY_ARC_RADIUS_M), dir - half, dir + half);

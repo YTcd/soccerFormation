@@ -9,7 +9,6 @@ import type { BoardModel } from '../model/BoardModel';
 import type { BoardView } from '../view/BoardView';
 import type { PanelView } from '../view/PanelView';
 
-/** Turns view events into model changes, then refreshes the views. */
 export class BoardController {
   constructor(
     private readonly model: BoardModel,
@@ -20,7 +19,6 @@ export class BoardController {
   start() {
     const m = this.model;
 
-    // The board already shows the dragged position, so only the model is updated.
     this.board.bind({
       onPlayerMove: (index, pos) => m.movePlayer(index, pos),
     });
@@ -43,7 +41,6 @@ export class BoardController {
       onDownload: () => this.downloadImage(),
     });
 
-    // A share link pasted into an already open tab only changes the hash, without reloading.
     window.addEventListener('hashchange', () => this.update(() => m.openSharedLink()));
 
     this.refresh();

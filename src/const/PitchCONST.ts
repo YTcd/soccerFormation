@@ -1,4 +1,3 @@
-// FIFA pitch dimensions in meters.
 export const FIELD_WIDTH_M = 68;
 export const FIELD_LENGTH_M = 105;
 export const CENTER_CIRCLE_RADIUS_M = 9.15;
@@ -12,7 +11,6 @@ export const PENALTY_SPOT_DISTANCE_M = 11;
 export const PENALTY_ARC_RADIUS_M = 9.15;
 export const CORNER_ARC_RADIUS_M = 1;
 
-// Look of the pitch.
 export const GRASS_COLOR = 0x2e7d32;
 export const GRASS_STRIPE_COLOR = 0x388e3c;
 export const GRASS_STRIPE_COUNT = 14;

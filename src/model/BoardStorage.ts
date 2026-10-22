@@ -4,9 +4,7 @@ import { MAX_PRESET_COUNT } from '../const/PresetCONST';
 import { ACTIVE_PRESET_KEY, COORDINATE_PRECISION, HEX_COLOR_PATTERN, PRESET_KEY_PREFIX } from '../const/StorageCONST';
 import type { BoardState } from './types';
 
-/** Saves presets to localStorage (one key per slot) and reads/writes share-link hashes. */
 export class BoardStorage {
-  /** Every valid saved preset, keyed by slot number. */
   loadPresets(): Map<number, BoardState> {
     const presets = new Map<number, BoardState>();
     for (let slot = 1; slot <= MAX_PRESET_COUNT; slot++) {
@@ -34,7 +32,6 @@ export class BoardStorage {
     this.setItem(ACTIVE_PRESET_KEY, String(slot));
   }
 
-  /** The board in the current URL's share-link hash, if any. */
   readSharedLink(): BoardState | null {
     const hash = location.hash.slice(1);
     return hash ? this.tryRead(() => this.decode(hash)) : null;
@@ -44,7 +41,6 @@ export class BoardStorage {
     if (location.hash) history.replaceState(null, '', location.pathname + location.search);
   }
 
-  /** UTF-8 safe, URL safe base64 of the state. */
   encode(state: BoardState): string {
     const bytes = new TextEncoder().encode(this.serialize(state));
     return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -55,7 +51,6 @@ export class BoardStorage {
     return JSON.parse(new TextDecoder().decode(bytes));
   }
 
-  // Coordinates are rounded to keep share links short.
   private serialize(state: BoardState): string {
     return JSON.stringify(state, (_, v) =>
       typeof v === 'number' ? Math.round(v * COORDINATE_PRECISION) / COORDINATE_PRECISION : v,

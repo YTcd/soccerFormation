@@ -1,6 +1,5 @@
 import { FIELD_LENGTH_M, FIELD_WIDTH_M } from './PitchCONST';
 
-// Canvas geometry: the field is drawn vertically with a grass margin around it.
 export const PX_PER_METER = 9;
 export const CANVAS_MARGIN = 30;
 export const FIELD_WIDTH_PX = FIELD_WIDTH_M * PX_PER_METER;

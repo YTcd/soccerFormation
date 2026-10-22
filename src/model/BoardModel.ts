@@ -9,10 +9,6 @@ import { BoardStorage } from './BoardStorage';
 import { formationPositions } from './formations';
 import type { BoardState, ColorKey, FormationName, Position, PresetSummary } from './types';
 
-/**
- * Up to MAX_PRESET_COUNT presets, one of which is active and edited on the board.
- * A board opened from a share link is shown read-only until it is saved as a preset.
- */
 export class BoardModel {
   private readonly presets: Map<number, BoardState>;
   private active: number;
@@ -27,7 +23,6 @@ export class BoardModel {
     this.openSharedLink();
   }
 
-  /** The board on screen: the shared one if viewing a link, otherwise the active preset. */
   get state(): Readonly<BoardState> {
     return this.shared ?? this.activePreset;
   }
@@ -49,8 +44,6 @@ export class BoardModel {
   get canAddPreset(): boolean {
     return this.presets.size < MAX_PRESET_COUNT;
   }
-
-  // --- Presets ---
 
   selectPreset(slot: number) {
     if (!this.presets.has(slot)) return;
@@ -84,7 +77,6 @@ export class BoardModel {
     this.selectPreset(slot);
   }
 
-  /** Shows the board from the URL's share link, if it has a valid one. */
   openSharedLink() {
     this.shared = this.storage.readSharedLink() ?? this.shared;
   }
@@ -94,9 +86,6 @@ export class BoardModel {
     this.storage.clearSharedLink();
   }
 
-  // --- Board edits (active preset only) ---
-
-  /** Moves every player to the formation's positions; names are kept. */
   setFormation(name: FormationName) {
     this.edit((s) => {
       s.formation = name;
@@ -116,7 +105,6 @@ export class BoardModel {
     this.edit((s) => Object.assign(s.players[index], pos));
   }
 
-  /** Restores the default board but keeps the preset name. */
   reset() {
     if (this.shared) return;
     this.store(this.active, { ...BoardModel.createDefault(this.active), name: this.activePreset.name });
@@ -126,13 +114,10 @@ export class BoardModel {
     return this.storage.encode(this.state);
   }
 
-  // --- Internals ---
-
   private get activePreset(): BoardState {
     return this.presets.get(this.active)!;
   }
 
-  // The shared board is read-only, so edits are ignored while it is shown.
   private edit(change: (state: BoardState) => void) {
     if (this.shared) return;
     change(this.activePreset);
