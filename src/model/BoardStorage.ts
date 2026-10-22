@@ -61,7 +61,7 @@ export class BoardStorage {
   }
 
   encodeShareCode(state: BoardState): string {
-    const json = serializeState(state);
+    const json = JSON.stringify(packShareState(state));
     const bytes = new TextEncoder().encode(json);
     const base64 = btoa(String.fromCharCode(...bytes));
 
@@ -77,7 +77,32 @@ function decodeShareCode(code: string): unknown {
   }
 
   const json = new TextDecoder().decode(bytes);
-  return JSON.parse(json);
+  return unpackShareState(JSON.parse(json));
+}
+
+// Flattens state into [name, formation, color, gkColor, ...(playerName, x, y)] to keep share links short.
+// Colors drop '#', coordinates become integers scaled by COORDINATE_PRECISION.
+function packShareState(state: BoardState): (string | number)[] {
+  const playerValues = state.players.flatMap((player) => [
+    player.name,
+    Math.round(player.x * COORDINATE_PRECISION),
+    Math.round(player.y * COORDINATE_PRECISION),
+  ]);
+
+  return [state.name, state.formation, state.color.slice(1), state.gkColor.slice(1), ...playerValues];
+}
+
+function unpackShareState([name, formation, color, gkColor, ...playerValues]: any[]): unknown {
+  const players = [];
+  for (let i = 0; i < playerValues.length; i += 3) {
+    players.push({
+      name: playerValues[i],
+      x: playerValues[i + 1] / COORDINATE_PRECISION,
+      y: playerValues[i + 2] / COORDINATE_PRECISION,
+    });
+  }
+
+  return { name, formation, color: `#${color}`, gkColor: `#${gkColor}`, players };
 }
 
 function toBase64Url(base64: string): string {
