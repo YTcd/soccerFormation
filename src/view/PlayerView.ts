@@ -12,6 +12,10 @@ const JERSEY_OUTLINE = [
 const NAME_FONT_FAMILY = ['-apple-system', 'BlinkMacSystemFont', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', 'sans-serif'];
 const NAME_MAX_WIDTH = 40;
 
+const ROLE_LABEL_Y = -41;
+const ROLE_LABEL_PADDING_X = 4;
+const ROLE_LABEL_HEIGHT = 16;
+
 const LIGHT_JERSEY_BRIGHTNESS = 160;
 const DARK_TEXT_COLOR = '#111111';
 const LIGHT_TEXT_COLOR = '#ffffff';
@@ -28,6 +32,18 @@ export class PlayerView extends Container {
     },
   });
 
+  private readonly roleLabel = new Container();
+  private readonly roleBackground = new Graphics();
+  private readonly roleText = new Text({
+    text: '',
+    style: {
+      fontFamily: NAME_FONT_FAMILY,
+      fontSize: 11,
+      fontWeight: '700',
+      fill: LIGHT_TEXT_COLOR,
+    },
+  });
+
   constructor(readonly index: number) {
     super();
 
@@ -36,14 +52,18 @@ export class PlayerView extends Container {
     this.nameText.anchor.set(0.5);
     this.nameText.y = 6;
 
-    this.addChild(shadow, this.jersey, this.nameText);
+    this.roleText.anchor.set(0.5);
+    this.roleLabel.y = ROLE_LABEL_Y;
+    this.roleLabel.addChild(this.roleBackground, this.roleText);
+
+    this.addChild(shadow, this.jersey, this.nameText, this.roleLabel);
 
     this.hitArea = new Rectangle(-PLAYER_HALF_WIDTH, -PLAYER_TOP, PLAYER_HALF_WIDTH * 2, PLAYER_TOP + PLAYER_BOTTOM);
     this.eventMode = 'static';
     this.cursor = 'grab';
   }
 
-  updateAppearance(name: string, jerseyColor: string) {
+  updateAppearance(name: string, role: string, jerseyColor: string) {
     const textColor = getContrastTextColor(jerseyColor);
 
     this.drawJersey(jerseyColor, textColor);
@@ -51,6 +71,20 @@ export class PlayerView extends Container {
     this.nameText.text = name;
     this.nameText.style.fill = textColor;
     this.shrinkNameToMaxWidth();
+
+    this.updateRoleLabel(role);
+  }
+
+  // Draws the role as white text on a black box above the jersey, hidden when empty.
+  private updateRoleLabel(role: string) {
+    this.roleLabel.visible = role !== '';
+    this.roleText.text = role;
+
+    const width = this.roleText.width + ROLE_LABEL_PADDING_X * 2;
+    this.roleBackground
+      .clear()
+      .roundRect(-width / 2, -ROLE_LABEL_HEIGHT / 2, width, ROLE_LABEL_HEIGHT, 3)
+      .fill(0x000000);
   }
 
   private shrinkNameToMaxWidth() {

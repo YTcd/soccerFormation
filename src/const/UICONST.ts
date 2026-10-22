@@ -3,6 +3,8 @@ import { MAX_PRESET_COUNT } from './PresetCONST';
 export const NAME_MAX_LENGTH = 12;
 export const GK_NAME_PLACEHOLDER = '골키퍼';
 export const PLAYER_NAME_PLACEHOLDER_PREFIX = '선수 ';
+export const ROLE_MAX_LENGTH = 4;
+export const ROLE_PLACEHOLDER = '포지션';
 
 export const PRESET_NAME_MAX_LENGTH = 20;
 export const ADD_PRESET_OPTION_VALUE = 'add';

@@ -11,6 +11,8 @@ import {
   PRESET_NAME_MAX_LENGTH,
   PRESETS_FULL_MESSAGE,
   RESET_CONFIRM_MESSAGE,
+  ROLE_MAX_LENGTH,
+  ROLE_PLACEHOLDER,
   TOAST_DURATION_MS,
 } from '../const/UICONST';
 import { getFormationNames, getTeamSize } from '../model/formations';
@@ -27,6 +29,7 @@ export type PanelHandlers = {
   onFormationChange(name: FormationName): void;
   onColorChange(key: ColorKey, value: string): void;
   onPlayerNameChange(index: number, name: string): void;
+  onPlayerRoleChange(index: number, role: string): void;
   onShare(): void;
   onDownload(): void;
   onReset(): void;
@@ -63,6 +66,7 @@ export class PanelView {
     gkColor: getElement('gkColor'),
   };
   private readonly playerNameInputs: HTMLInputElement[] = [];
+  private readonly playerRoleInputs: HTMLInputElement[] = [];
   private readonly resetButton = getElement<HTMLButtonElement>('reset');
 
   private readonly toastMessage = getElement<HTMLParagraphElement>('toast');
@@ -77,7 +81,9 @@ export class PanelView {
     }
 
     for (let i = 0; i < MAX_PLAYER_COUNT; i++) {
-      this.playerNameInputs.push(this.createPlayerNameInput(i));
+      const [nameInput, roleInput] = this.createPlayerInputs(i);
+      this.playerNameInputs.push(nameInput);
+      this.playerRoleInputs.push(roleInput);
     }
   }
 
@@ -104,11 +110,12 @@ export class PanelView {
     this.colorInputs.gkColor.value = state.gkColor;
 
     for (let i = 0; i < this.playerNameInputs.length; i++) {
-      const input = this.playerNameInputs[i];
+      const nameInput = this.playerNameInputs[i];
       const isInTeam = i < state.players.length;
 
-      input.parentElement!.hidden = !isInTeam;
-      input.value = isInTeam ? state.players[i].name : '';
+      nameInput.closest('li')!.hidden = !isInTeam;
+      nameInput.value = isInTeam ? state.players[i].name : '';
+      this.playerRoleInputs[i].value = isInTeam ? state.players[i].role : '';
     }
   }
 
@@ -165,6 +172,10 @@ export class PanelView {
     this.playerNameInputs.forEach((input, index) => {
       input.addEventListener('input', () => handlers.onPlayerNameChange(index, input.value));
     });
+
+    this.playerRoleInputs.forEach((input, index) => {
+      input.addEventListener('input', () => handlers.onPlayerRoleChange(index, input.value));
+    });
   }
 
   private bindActionEvents(handlers: PanelHandlers) {
@@ -205,18 +216,27 @@ export class PanelView {
     this.formationSelect.value = formation;
   }
 
-  private createPlayerNameInput(index: number): HTMLInputElement {
+  private createPlayerInputs(index: number): [HTMLInputElement, HTMLInputElement] {
     const isGoalkeeper = index === GOALKEEPER_INDEX;
 
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.maxLength = NAME_MAX_LENGTH;
-    input.placeholder = isGoalkeeper ? GK_NAME_PLACEHOLDER : `${PLAYER_NAME_PLACEHOLDER_PREFIX}${index + 1}`;
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.maxLength = NAME_MAX_LENGTH;
+    nameInput.placeholder = isGoalkeeper ? GK_NAME_PLACEHOLDER : `${PLAYER_NAME_PLACEHOLDER_PREFIX}${index + 1}`;
+
+    const roleInput = document.createElement('input');
+    roleInput.type = 'text';
+    roleInput.maxLength = ROLE_MAX_LENGTH;
+    roleInput.placeholder = ROLE_PLACEHOLDER;
+
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.append(nameInput, roleInput);
 
     const listItem = document.createElement('li');
-    listItem.append(input);
+    listItem.append(row);
     getElement('names').append(listItem);
 
-    return input;
+    return [nameInput, roleInput];
   }
 }

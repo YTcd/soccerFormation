@@ -114,6 +114,7 @@ export class BoardModel {
       preset.formation = name;
       preset.players = positions.map((position, i) => ({
         name: preset.players[i]?.name ?? getDefaultPlayerName(i),
+        role: preset.players[i]?.role ?? '',
         ...position,
       }));
     });
@@ -128,6 +129,12 @@ export class BoardModel {
   setPlayerName(index: number, name: string) {
     this.editActivePreset((preset) => {
       preset.players[index].name = name;
+    });
+  }
+
+  setPlayerRole(index: number, role: string) {
+    this.editActivePreset((preset) => {
+      preset.players[index].role = role;
     });
   }
 
@@ -187,6 +194,7 @@ function createDefaultPreset(slot: number, teamSize: TeamSize = DEFAULT_TEAM_SIZ
   const positions = getFormationPositions(formation);
   const players = positions.map((position, i) => ({
     name: getDefaultPlayerName(i),
+    role: '',
     ...position,
   }));
 

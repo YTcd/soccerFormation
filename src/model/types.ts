@@ -8,7 +8,7 @@ export type PitchType = 'soccer' | 'futsal';
 
 export type Position = { x: number; y: number };
 
-export type Player = Position & { name: string };
+export type Player = Position & { name: string; role: string };
 
 export type ColorKey = 'color' | 'gkColor';
 

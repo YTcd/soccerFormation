@@ -81,7 +81,7 @@ export class BoardView {
       const playerState = state.players[i];
       const isGoalkeeper = i === GOALKEEPER_INDEX;
       const color = isGoalkeeper ? state.gkColor : state.color;
-      playerView.updateAppearance(playerState.name, color);
+      playerView.updateAppearance(playerState.name, playerState.role, color);
 
       const canvasPosition = toCanvasPosition(playerState, this.layout);
       playerView.position.set(canvasPosition.x, canvasPosition.y);

@@ -111,6 +111,12 @@ legend {
   gap: 6px;
 }
 
+#names .row input:last-child {
+  flex: none;
+  width: 4.5em;
+  text-align: center;
+}
+
 #names li::marker {
   color: #6b7682;
   font-size: 0.8rem;

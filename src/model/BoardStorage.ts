@@ -80,25 +80,31 @@ function decodeShareCode(code: string): unknown {
   return unpackShareState(JSON.parse(json));
 }
 
-// Flattens state into [name, formation, color, gkColor, ...(playerName, x, y)] to keep share links short.
-// Colors drop '#', coordinates become integers scaled by COORDINATE_PRECISION.
+// Flattens state into [name, formation, color, gkColor, ...(playerName, x, y), ...roles] to keep share links short.
+// Colors drop '#', coordinates become integers scaled by COORDINATE_PRECISION, roles are omitted when all empty.
 function packShareState(state: BoardState): (string | number)[] {
   const playerValues = state.players.flatMap((player) => [
     player.name,
     Math.round(player.x * COORDINATE_PRECISION),
     Math.round(player.y * COORDINATE_PRECISION),
   ]);
+  const roles = state.players.map((player) => player.role);
+  const roleValues = roles.some(Boolean) ? roles : [];
 
-  return [state.name, state.formation, state.color.slice(1), state.gkColor.slice(1), ...playerValues];
+  return [state.name, state.formation, state.color.slice(1), state.gkColor.slice(1), ...playerValues, ...roleValues];
 }
 
-function unpackShareState([name, formation, color, gkColor, ...playerValues]: any[]): unknown {
+function unpackShareState([name, formation, color, gkColor, ...values]: any[]): unknown {
+  const playerCount = getTeamSize(formation);
+  const roles = values.slice(playerCount * 3);
+
   const players = [];
-  for (let i = 0; i < playerValues.length; i += 3) {
+  for (let i = 0; i < playerCount; i++) {
     players.push({
-      name: playerValues[i],
-      x: playerValues[i + 1] / COORDINATE_PRECISION,
-      y: playerValues[i + 2] / COORDINATE_PRECISION,
+      name: values[i * 3],
+      x: values[i * 3 + 1] / COORDINATE_PRECISION,
+      y: values[i * 3 + 2] / COORDINATE_PRECISION,
+      role: roles[i],
     });
   }
 
@@ -129,7 +135,15 @@ function roundCoordinate(value: number): number {
 function parseValidState(parse: () => unknown): BoardState | null {
   try {
     const state = parse();
-    return isBoardState(state) ? state : null;
+    if (!isBoardState(state)) {
+      return null;
+    }
+
+    // Presets and share links made before roles existed have no role.
+    for (const player of state.players) {
+      player.role ??= '';
+    }
+    return state;
   } catch {
     return null;
   }
@@ -154,7 +168,8 @@ function isBoardState(value: any): value is BoardState {
 }
 
 function isPlayer(value: any): boolean {
-  return typeof value.name === 'string' && Number.isFinite(value.x) && Number.isFinite(value.y);
+  const hasValidRole = value.role === undefined || typeof value.role === 'string';
+  return typeof value.name === 'string' && hasValidRole && Number.isFinite(value.x) && Number.isFinite(value.y);
 }
 
 function isHexColor(value: unknown): boolean {

@@ -38,6 +38,7 @@ export class BoardController {
       onFormationChange: (name) => this.changeAndRefresh(() => model.setFormation(name)),
       onColorChange: (key, value) => this.changeAndRefresh(() => model.setColor(key, value)),
       onPlayerNameChange: (index, name) => this.changeAndRefresh(() => model.setPlayerName(index, name)),
+      onPlayerRoleChange: (index, role) => this.changeAndRefresh(() => model.setPlayerRole(index, role)),
       onReset: () => this.changeAndRefresh(() => model.resetActivePreset()),
       onShare: () => this.copyShareLink(),
       onDownload: () => this.downloadImage(),
