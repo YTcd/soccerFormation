@@ -49,13 +49,13 @@ header {
 
 header h1 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.7rem;
 }
 
 header p {
   margin: 4px 0 0;
   color: #9aa5b1;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 main {
@@ -67,7 +67,7 @@ main {
 }
 
 .board {
-  width: min(100%, calc((100dvh - 110px - var(--site-nav-height)) * var(--canvas-aspect-ratio)));
+  width: min(100%, calc((100dvh - 118px - var(--site-nav-height)) * var(--canvas-aspect-ratio)));
   flex-shrink: 0;
 }
 
@@ -80,7 +80,7 @@ main {
 }
 
 .panel {
-  width: 280px;
+  width: 320px;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -89,8 +89,8 @@ main {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 0.85rem;
+  gap: 6px;
+  font-size: 1rem;
   color: #9aa5b1;
 }
 
@@ -132,7 +132,7 @@ fieldset {
 
 legend {
   padding: 0 4px;
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: #9aa5b1;
 }
 
@@ -152,7 +152,7 @@ legend {
 
 #names li::marker {
   color: #6b7682;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
 }
 
 .actions {
@@ -213,7 +213,7 @@ button:hover {
   border: 1px solid #2e7d32;
   border-radius: 8px;
   background: #1b2a1d;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .shared p {
@@ -223,7 +223,7 @@ button:hover {
 .shared .hint {
   margin: 10px 0 0;
   color: #ffb74d;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
 }
 
 .editor {
@@ -287,7 +287,7 @@ button:disabled,
 
 .radar-label {
   fill: #9aa5b1;
-  font-size: 15px;
+  font-size: 18px;
 }
 
 .radar-label .value {
@@ -309,7 +309,7 @@ button:disabled,
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  padding: 7px 10px;
+  padding: 9px 12px;
   text-align: left;
 }
 
@@ -331,18 +331,18 @@ button:disabled,
   border: 1px solid #333c46;
   border-radius: 8px;
   color: #9aa5b1;
-  font-size: 0.9rem;
+  font-size: 1.05rem;
 }
 
 .total strong {
   color: #81c784;
-  font-size: 2rem;
+  font-size: 2.4rem;
 }
 
 #toast {
   min-height: 1.2em;
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: #81c784;
 }
 

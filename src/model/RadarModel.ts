@@ -7,7 +7,7 @@ import {
   STAT_LABELS,
 } from '../const/RadarCONST';
 import { RadarStorage } from './RadarStorage';
-import type { RadarPlayer, RadarPlayerSummary } from './types';
+import type { FormationImportResult, RadarPlayer, RadarPlayerSummary } from './types';
 
 export class RadarModel {
   private readonly players: RadarPlayer[];
@@ -17,7 +17,7 @@ export class RadarModel {
     this.players = storage.loadPlayers();
 
     if (this.players.length === 0) {
-      this.players.push(createDefaultPlayer(1));
+      this.players.push(createPlayer(getDefaultPlayerName(1)));
       storage.savePlayers(this.players);
     }
 
@@ -63,9 +63,39 @@ export class RadarModel {
       return;
     }
 
-    this.players.push(createDefaultPlayer(this.players.length + 1));
+    this.players.push(createPlayer(getDefaultPlayerName(this.players.length + 1)));
     this.storage.savePlayers(this.players);
     this.selectPlayer(this.players.length - 1);
+  }
+
+  // Adds names from the Formation page's current preset, skipping blanks and names already in the list.
+  importFormationNames(): FormationImportResult | null {
+    const preset = this.storage.loadFormationPreset();
+    if (!preset) {
+      return null;
+    }
+
+    const existingNames = new Set(this.players.map((player) => player.name));
+    const result = { presetName: preset.name, added: 0, skipped: 0 };
+
+    for (const player of preset.players) {
+      const name = player.name.trim();
+      if (!name || existingNames.has(name)) {
+        continue;
+      }
+
+      if (!this.canAddPlayer) {
+        result.skipped++;
+        continue;
+      }
+
+      this.players.push(createPlayer(name));
+      existingNames.add(name);
+      result.added++;
+    }
+
+    this.storage.savePlayers(this.players);
+    return result;
   }
 
   deletePlayer() {
@@ -103,11 +133,12 @@ export class RadarModel {
   }
 }
 
-function createDefaultPlayer(number: number): RadarPlayer {
-  return {
-    name: `${DEFAULT_RADAR_PLAYER_NAME_PREFIX}${number}`,
-    stats: STAT_LABELS.map(() => DEFAULT_STAT),
-  };
+function createPlayer(name: string): RadarPlayer {
+  return { name, stats: STAT_LABELS.map(() => DEFAULT_STAT) };
+}
+
+function getDefaultPlayerName(number: number): string {
+  return `${DEFAULT_RADAR_PLAYER_NAME_PREFIX}${number}`;
 }
 
 function sumStats(stats: number[]): number {

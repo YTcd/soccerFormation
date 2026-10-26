@@ -25,3 +25,5 @@ export type PresetSummary = { slot: number; name: string };
 export type RadarPlayer = { name: string; stats: number[] };
 
 export type RadarPlayerSummary = { name: string; total: number };
+
+export type FormationImportResult = { presetName: string; added: number; skipped: number };

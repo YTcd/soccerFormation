@@ -7,6 +7,7 @@ export type RadarPanelHandlers = {
   onPlayerAdd(): void;
   onPlayerRename(name: string): void;
   onPlayerDelete(): void;
+  onFormationImport(): void;
   onExportFile(): void;
   onExportCopy(): void;
 };
@@ -48,6 +49,7 @@ export class RadarPanelView {
     });
 
     this.playerAddButton.addEventListener('click', () => handlers.onPlayerAdd());
+    getElement('formationImport').addEventListener('click', () => handlers.onFormationImport());
 
     this.playerNameInput.addEventListener('input', () => {
       handlers.onPlayerRename(this.playerNameInput.value);

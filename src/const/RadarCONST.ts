@@ -12,8 +12,11 @@ export const DEFAULT_STAT = 5;
 export const MAX_TOTAL = MAX_STAT * STAT_LABELS.length;
 
 export const MAX_RADAR_PLAYER_COUNT = 15;
-export const DEFAULT_RADAR_PLAYER_NAME_PREFIX = "선수 ";
+export const DEFAULT_RADAR_PLAYER_NAME_PREFIX = "선수";
 export const DELETE_RADAR_PLAYER_CONFIRM_MESSAGE = "현재 선수를 삭제할까요?";
+
+export const IMPORT_NO_PRESET_MESSAGE = "Formation에 저장된 선수가 없어요.";
+export const IMPORT_NOTHING_MESSAGE = "새로 불러올 이름이 없어요.";
 
 export const EXPORT_FILE_NAME = "radar-players.json";
 export const EXPORT_SAVED_MESSAGE = "JSON 파일을 저장했어요.";
