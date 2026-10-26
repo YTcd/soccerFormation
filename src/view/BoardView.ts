@@ -1,12 +1,12 @@
-import { Application, Container, FederatedPointerEvent, Rectangle } from 'pixi.js';
+import { Application, Container, FederatedPointerEvent, Graphics, Rectangle, type Ticker } from 'pixi.js';
 import { GOALKEEPER_INDEX, MAX_PLAYER_COUNT } from '../const/BoardCONST';
 import { CANVAS_MARGIN } from '../const/LayoutCONST';
 import { GRASS_COLOR } from '../const/PitchCONST';
-import { PLAYER_BOTTOM, PLAYER_HALF_WIDTH, PLAYER_TOP } from '../const/PlayerCONST';
+import { PLAYER_BOTTOM, PLAYER_HALF_WIDTH, PLAYER_SWAP_RADIUS, PLAYER_TOP } from '../const/PlayerCONST';
 import type { BoardState, PitchType, Position } from '../model/types';
 import { getPitchType, PITCH_LAYOUTS, type PitchLayout } from './pitchLayout';
 import { PitchView } from './PitchView';
-import { PlayerView } from './PlayerView';
+import { drawJerseyShape, PlayerView } from './PlayerView';
 
 export type BoardHandlers = {
   onPlayerMove(index: number, pos: Position): void;
@@ -16,13 +16,24 @@ type Drag = {
   player: PlayerView;
   offsetX: number;
   offsetY: number;
+  startX: number;
+  startY: number;
+  swapTarget: PlayerView | null;
 };
 
 const INITIAL_PITCH_TYPE: PitchType = 'soccer';
 
+const SWAP_GHOST_COLOR = 0xffffff;
+const SWAP_ANIMATION_MS = 180;
+
 export class BoardView {
   private readonly playerLayer = new Container();
   private readonly players: PlayerView[] = [];
+  // Shows where the swap target will land: the dragged player's starting spot.
+  private readonly swapGhost = drawJerseyShape(new Graphics())
+    .fill({ color: SWAP_GHOST_COLOR, alpha: 0.2 })
+    .stroke({ width: 2, color: SWAP_GHOST_COLOR, alpha: 0.8, join: 'round' });
+  private readonly animations = new Map<PlayerView, (ticker: Ticker) => void>();
   private pitchType = INITIAL_PITCH_TYPE;
   private pitchView = new PitchView(INITIAL_PITCH_TYPE);
   private drag: Drag | null = null;
@@ -71,6 +82,7 @@ export class BoardView {
 
     for (let i = 0; i < this.players.length; i++) {
       const playerView = this.players[i];
+      this.stopAnimation(playerView);
       const isInTeam = i < state.players.length;
 
       playerView.visible = isInTeam;
@@ -113,7 +125,9 @@ export class BoardView {
   private setupStage() {
     const stage = this.app.stage;
 
-    stage.addChild(this.pitchView, this.playerLayer);
+    this.swapGhost.visible = false;
+
+    stage.addChild(this.pitchView, this.swapGhost, this.playerLayer);
     stage.eventMode = 'static';
     stage.hitArea = this.app.screen;
     stage.on('globalpointermove', (e) => this.moveDrag(e));
@@ -164,10 +178,15 @@ export class BoardView {
   }
 
   private startDrag(e: FederatedPointerEvent, player: PlayerView) {
+    this.stopAnimation(player);
+
     this.drag = {
       player,
       offsetX: player.x - e.global.x,
       offsetY: player.y - e.global.y,
+      startX: player.x,
+      startY: player.y,
+      swapTarget: null,
     };
 
     this.playerLayer.addChild(player);
@@ -185,6 +204,7 @@ export class BoardView {
     const y = clamp(e.global.y + offsetY, PLAYER_TOP, canvasHeight - PLAYER_BOTTOM);
 
     player.position.set(x, y);
+    this.updateSwapPreview(this.drag);
   }
 
   private endDrag() {
@@ -192,12 +212,93 @@ export class BoardView {
       return;
     }
 
-    const { player } = this.drag;
+    const { player, startX, startY, swapTarget } = this.drag;
     player.cursor = 'grab';
     this.drag = null;
+    this.hideSwapPreview(swapTarget);
 
-    const fieldPosition = toFieldPosition(player.position, this.layout);
+    let fieldPosition = toFieldPosition(player.position, this.layout);
+    if (swapTarget) {
+      fieldPosition = toFieldPosition(swapTarget.position, this.layout);
+      this.animateTo(player, swapTarget.x, swapTarget.y);
+      this.animateTo(swapTarget, startX, startY);
+      this.handlers?.onPlayerMove(swapTarget.index, toFieldPosition({ x: startX, y: startY }, this.layout));
+    }
+
     this.handlers?.onPlayerMove(player.index, fieldPosition);
+  }
+
+  private updateSwapPreview(drag: Drag) {
+    const swapTarget = this.findSwapTarget(drag.player);
+    if (swapTarget === drag.swapTarget) {
+      return;
+    }
+
+    this.hideSwapPreview(drag.swapTarget);
+    drag.swapTarget = swapTarget;
+
+    if (swapTarget) {
+      swapTarget.setSwapHighlight(true);
+      this.swapGhost.position.set(drag.startX, drag.startY);
+      this.swapGhost.visible = true;
+    }
+  }
+
+  private hideSwapPreview(swapTarget: PlayerView | null) {
+    swapTarget?.setSwapHighlight(false);
+    this.swapGhost.visible = false;
+  }
+
+  private animateTo(player: PlayerView, toX: number, toY: number) {
+    this.stopAnimation(player);
+
+    const fromX = player.x;
+    const fromY = player.y;
+    let elapsedMs = 0;
+
+    const tick = (ticker: Ticker) => {
+      elapsedMs += ticker.deltaMS;
+      const progress = Math.min(1, elapsedMs / SWAP_ANIMATION_MS);
+      const eased = 1 - (1 - progress) ** 3;
+
+      player.position.set(fromX + (toX - fromX) * eased, fromY + (toY - fromY) * eased);
+
+      if (progress === 1) {
+        this.stopAnimation(player);
+      }
+    };
+
+    this.animations.set(player, tick);
+    this.app.ticker.add(tick);
+  }
+
+  private stopAnimation(player: PlayerView) {
+    const tick = this.animations.get(player);
+    if (!tick) {
+      return;
+    }
+
+    this.app.ticker.remove(tick);
+    this.animations.delete(player);
+  }
+
+  private findSwapTarget(player: PlayerView): PlayerView | null {
+    let nearest: PlayerView | null = null;
+    let nearestDistance = PLAYER_SWAP_RADIUS;
+
+    for (const other of this.players) {
+      if (other === player || !other.visible) {
+        continue;
+      }
+
+      const distance = Math.hypot(other.x - player.x, other.y - player.y);
+      if (distance <= nearestDistance) {
+        nearest = other;
+        nearestDistance = distance;
+      }
+    }
+
+    return nearest;
   }
 }
 

@@ -16,12 +16,20 @@ const ROLE_LABEL_Y = -41;
 const ROLE_LABEL_PADDING_X = 4;
 const ROLE_LABEL_HEIGHT = 16;
 
+const SWAP_HIGHLIGHT_COLOR = 0xffeb3b;
+const SWAP_HIGHLIGHT_WIDTH = 8;
+
 const LIGHT_JERSEY_BRIGHTNESS = 160;
 const DARK_TEXT_COLOR = '#111111';
 const LIGHT_TEXT_COLOR = '#ffffff';
 
 export class PlayerView extends Container {
   private readonly jersey = new Graphics();
+  private readonly swapHighlight = drawJerseyShape(new Graphics()).stroke({
+    width: SWAP_HIGHLIGHT_WIDTH,
+    color: SWAP_HIGHLIGHT_COLOR,
+    join: 'round',
+  });
   private readonly nameText = new Text({
     text: '',
     style: {
@@ -56,7 +64,10 @@ export class PlayerView extends Container {
     this.roleLabel.y = ROLE_LABEL_Y;
     this.roleLabel.addChild(this.roleBackground, this.roleText);
 
-    this.addChild(shadow, this.jersey, this.nameText, this.roleLabel);
+    // Drawn behind the jersey so only the outer half of the stroke shows as a glow.
+    this.swapHighlight.visible = false;
+
+    this.addChild(shadow, this.swapHighlight, this.jersey, this.nameText, this.roleLabel);
 
     this.hitArea = new Rectangle(-PLAYER_HALF_WIDTH, -PLAYER_TOP, PLAYER_HALF_WIDTH * 2, PLAYER_TOP + PLAYER_BOTTOM);
     this.eventMode = 'static';
@@ -73,6 +84,10 @@ export class PlayerView extends Container {
     this.shrinkNameToMaxWidth();
 
     this.updateRoleLabel(role);
+  }
+
+  setSwapHighlight(visible: boolean) {
+    this.swapHighlight.visible = visible;
   }
 
   // Draws the role as white text on a black box above the jersey, hidden when empty.
@@ -96,16 +111,9 @@ export class PlayerView extends Container {
   }
 
   private drawJersey(jerseyColor: string, trimColor: string) {
-    const graphics = this.jersey.clear();
-
-    graphics.moveTo(-COLLAR_X, COLLAR_Y).quadraticCurveTo(0, -20, COLLAR_X, COLLAR_Y);
-
-    for (const [x, y] of JERSEY_OUTLINE) {
-      graphics.lineTo(x, y);
-    }
+    const graphics = drawJerseyShape(this.jersey.clear());
 
     graphics
-      .closePath()
       .fill(jerseyColor)
       .stroke({ width: 2, color: 0x000000, alpha: 0.35, join: 'round' });
 
@@ -114,6 +122,16 @@ export class PlayerView extends Container {
       .quadraticCurveTo(0, -18, COLLAR_X, COLLAR_Y)
       .stroke({ width: 3, color: trimColor, alpha: 0.5 });
   }
+}
+
+export function drawJerseyShape(graphics: Graphics): Graphics {
+  graphics.moveTo(-COLLAR_X, COLLAR_Y).quadraticCurveTo(0, -20, COLLAR_X, COLLAR_Y);
+
+  for (const [x, y] of JERSEY_OUTLINE) {
+    graphics.lineTo(x, y);
+  }
+
+  return graphics.closePath();
 }
 
 function getContrastTextColor(hexColor: string): string {
