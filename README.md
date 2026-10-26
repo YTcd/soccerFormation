@@ -1,9 +1,19 @@
 # 축구 전술판
 
 선수를 드래그해서 포메이션을 짜고, 링크나 이미지로 팀원에게 공유하는 웹 전술판입니다.
+선수별 능력치를 육각형 레이더 차트로 기록하고 JSON으로 내보낼 수도 있습니다.
 회원가입이나 서버 없이 브라우저만 있으면 PC·모바일 어디서든 쓸 수 있습니다.
 
+두 페이지로 나뉘어 있고, 화면 맨 위 탭으로 오갈 수 있습니다.
+
+| 페이지 | 주소 | 내용 |
+| --- | --- | --- |
+| Formation | `index.html` | 포메이션 전술판 |
+| Radar Chart | `radar.html` | 선수 능력치 레이더 차트 |
+
 ## 주요 기능
+
+### Formation
 
 | 기능 | 설명 |
 | --- | --- |
@@ -15,6 +25,17 @@
 | 자동 저장 | 모든 변경이 브라우저에 바로 저장되고, 다시 열면 마지막 프리셋이 그대로 나옴 |
 | 링크 공유 | 현재 포메이션이 담긴 링크를 복사해서 공유 |
 | 이미지 저장 | 경기장 화면을 PNG 이미지로 다운로드 |
+
+### Radar Chart
+
+| 기능 | 설명 |
+| --- | --- |
+| 능력치 | 패스·크로스, 속도, 슈팅, 드리블, 수비, 체력 6개 항목을 0~10점(1점 단위)으로 기록 |
+| 점수 조절 | 육각형 꼭짓점을 드래그하거나 축 위를 클릭해서 조절 (터치 지원) |
+| 총점 | 현재 선수의 총점(최대 60점)과 목록의 선수별 총점 표시 |
+| 선수 목록 | 최대 15명까지 추가·선택·이름 변경·삭제 |
+| 자동 저장 | 모든 변경이 브라우저에 바로 저장됨 |
+| JSON 내보내기 | 전체 선수의 능력치를 JSON 파일로 저장하거나 클립보드에 복사 |
 
 ## 사용법
 
@@ -52,6 +73,31 @@
 - **내 프리셋으로 저장**: 내 프리셋에 추가되어 자유롭게 수정·재공유할 수 있습니다. (프리셋이 10개 꽉 찼다면 하나를 지운 뒤 저장)
 - **내 프리셋으로 돌아가기**: 공유 화면을 닫고 원래 쓰던 프리셋으로 돌아갑니다.
 
+### 5. 선수 능력치 기록하기 (Radar Chart)
+
+1. 맨 위 **Radar Chart** 탭으로 이동합니다.
+2. 오른쪽 **선수** 목록에서 선수를 고르거나, `+ 선수 추가`로 새 선수를 만듭니다. (최대 15명)
+3. **선수 이름** 칸에서 이름을 바꾸고, **삭제** 버튼으로 현재 선수를 지웁니다. (마지막 1명은 삭제할 수 없음)
+4. 육각형의 꼭짓점을 **드래그**하거나 축 위를 **클릭**해서 각 항목의 점수를 정합니다. 중심이 0점, 바깥 끝이 10점입니다.
+5. 오른쪽 **총점**에서 현재 선수의 합계를 확인합니다.
+
+> 💡 새 선수는 모든 항목이 5점으로 시작합니다. Formation과 마찬가지로 바꾸는 즉시 이 브라우저에 자동 저장됩니다.
+
+그래프 아래 버튼으로 전체 선수 데이터를 내보낼 수 있습니다.
+
+- **JSON 파일 저장**: `radar-players.json` 파일이 다운로드됩니다.
+- **JSON 복사**: 같은 내용이 클립보드에 복사됩니다.
+
+```json
+[
+  {
+    "name": "선수 1",
+    "stats": { "패스·크로스": 5, "속도": 8, "슈팅": 5, "드리블": 5, "수비": 5, "체력": 5 },
+    "total": 33
+  }
+]
+```
+
 ## 개발
 
 Node.js 18 이상이 필요합니다.
@@ -59,17 +105,22 @@ Node.js 18 이상이 필요합니다.
 ```sh
 npm install
 npm run dev      # watch 모드: http://localhost:8000 이 열리고, 파일 저장 시 자동 반영
-npm run build    # 타입 체크(tsc) 후 dist/ 에 빌드
+npm run build    # 타입 체크(tsc) 후 dist/ 에 빌드 (index.html, radar.html 두 페이지)
 npm run preview  # 빌드 결과(dist/) 확인
 ```
 
+Radar Chart는 개발 중 http://localhost:8000/radar.html 에서 열립니다.
+
 ## 구조
 
-MVC 패턴으로 나뉘어 있습니다.
+MVC 패턴으로 나뉘어 있습니다. 두 페이지가 `const/`·`model/`·`view/`·`controller/` 폴더를 함께 쓰고, 파일 이름으로 구분합니다. (`Board*`는 Formation, `Radar*`는 Radar Chart)
 
 ```
+index.html                    Formation 페이지
+radar.html                    Radar Chart 페이지
 src/
-├─ main.ts                    진입점: Model·View·Controller 생성과 연결
+├─ main.ts                    Formation 진입점: Model·View·Controller 생성과 연결
+├─ radarMain.ts               Radar Chart 진입점
 ├─ const/                     변하지 않는 값 모음 (모두 대문자 이름)
 │  ├─ BoardCONST.ts           선수 수, 기본 포메이션·색상·이름
 │  ├─ FormationCONST.ts       포메이션 종류, 줄 배치 위치
@@ -77,20 +128,26 @@ src/
 │  ├─ PitchCONST.ts           축구·풋살 경기장 규격(m), 잔디 색
 │  ├─ LayoutCONST.ts          미터당 픽셀, 캔버스 여백
 │  ├─ PlayerCONST.ts          선수 터치·드래그 영역 크기
+│  ├─ RadarCONST.ts           능력치 항목·점수 범위, 최대 선수 수, 차트 크기, 내보내기 문구
 │  ├─ StorageCONST.ts         localStorage 키, 좌표 정밀도
 │  └─ UICONST.ts              안내 문구, 입력 제한, 토스트 시간
 ├─ model/                     데이터와 규칙 (화면을 모름)
 │  ├─ types.ts                상태 타입
 │  ├─ formations.ts           포메이션 위치 계산
 │  ├─ BoardStorage.ts         프리셋 저장(슬롯별 키), 공유 링크 인코딩
-│  └─ BoardModel.ts           프리셋 관리, 공유 보기, 보드 편집
+│  ├─ BoardModel.ts           프리셋 관리, 공유 보기, 보드 편집
+│  ├─ RadarStorage.ts         선수 능력치 목록 저장
+│  └─ RadarModel.ts           선수 관리, 점수 변경, 총점, JSON 내보내기
 ├─ view/                      화면 (Model을 직접 바꾸지 않음)
 │  ├─ pitchLayout.ts          경기장 종류별 캔버스 크기 계산
 │  ├─ PitchView.ts            경기장
 │  ├─ PlayerView.ts           선수 유니폼
 │  ├─ BoardView.ts            Pixi 캔버스, 드래그, 이미지 저장
-│  └─ PanelView.ts            오른쪽 설정 패널
+│  ├─ PanelView.ts            오른쪽 설정 패널
+│  ├─ RadarChartView.ts       SVG 육각형 차트, 드래그·클릭으로 점수 조절
+│  └─ RadarPanelView.ts       선수 목록, 총점, 내보내기 버튼
 ├─ controller/
-│  └─ BoardController.ts      View 이벤트 → Model 변경 → View 갱신
-└─ style.css
+│  ├─ BoardController.ts      View 이벤트 → Model 변경 → View 갱신
+│  └─ RadarController.ts      Radar Chart용 컨트롤러, 파일 저장·클립보드 복사
+└─ style.css                  두 페이지 공통 스타일
 ```
