@@ -2,10 +2,43 @@
   box-sizing: border-box;
 }
 
+:root {
+  --site-nav-height: 44px;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
   background: #14181d;
+  color: #e8ecef;
+}
+
+.site-nav {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  height: var(--site-nav-height);
+  border-bottom: 1px solid #333c46;
+  background: #0f1317;
+}
+
+.site-nav a {
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 2px solid transparent;
+  color: #9aa5b1;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.site-nav a:hover {
+  color: #e8ecef;
+}
+
+.site-nav a[aria-current="page"] {
+  border-bottom-color: #4caf50;
   color: #e8ecef;
 }
 
@@ -34,7 +67,7 @@ main {
 }
 
 .board {
-  width: min(100%, calc((100dvh - 110px) * var(--canvas-aspect-ratio)));
+  width: min(100%, calc((100dvh - 110px - var(--site-nav-height)) * var(--canvas-aspect-ratio)));
   flex-shrink: 0;
 }
 
@@ -207,6 +240,103 @@ button:disabled,
 .editor:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.chart {
+  width: min(100%, 560px);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.radar-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  background: #1a1f25;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+
+.radar-grid {
+  fill: none;
+  stroke: #2a323b;
+}
+
+.radar-grid.major,
+.radar-axis {
+  stroke: #3d4752;
+}
+
+.radar-shape {
+  fill: rgba(76, 175, 80, 0.35);
+  stroke: #66bb6a;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.radar-handle {
+  fill: #fff;
+  stroke: #2e7d32;
+  stroke-width: 3;
+}
+
+.radar-label {
+  fill: #9aa5b1;
+  font-size: 15px;
+}
+
+.radar-label .value {
+  fill: #e8ecef;
+  font-weight: 700;
+}
+
+.player-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.player-list button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  text-align: left;
+}
+
+.player-list button.active {
+  border-color: #2e7d32;
+  background: #1b2a1d;
+}
+
+.player-total {
+  color: #81c784;
+  font-weight: 700;
+}
+
+.total {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #333c46;
+  border-radius: 8px;
+  color: #9aa5b1;
+  font-size: 0.9rem;
+}
+
+.total strong {
+  color: #81c784;
+  font-size: 2rem;
 }
 
 #toast {

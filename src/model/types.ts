@@ -21,3 +21,7 @@ export type BoardState = {
 };
 
 export type PresetSummary = { slot: number; name: string };
+
+export type RadarPlayer = { name: string; stats: number[] };
+
+export type RadarPlayerSummary = { name: string; total: number };

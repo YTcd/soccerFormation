@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Radar Chart</title>
+</head>
+<body>
+  <nav class="site-nav">
+    <a href="./">Formation</a>
+    <a href="./radar.html" aria-current="page">Radar Chart</a>
+  </nav>
+
+  <header>
+    <h1>📊 선수 능력치</h1>
+    <p>꼭짓점을 드래그하거나 축을 클릭해서 점수를 조절하세요.</p>
+  </header>
+
+  <main>
+    <section class="chart">
+      <div id="chart"></div>
+      <div class="actions">
+        <button id="exportFile" class="primary">JSON 파일 저장</button>
+        <button id="exportCopy" class="primary">JSON 복사</button>
+      </div>
+      <p id="toast" role="status"></p>
+    </section>
+
+    <aside class="panel">
+      <section class="presets">
+        <div class="field">
+          <span>선수 <span id="playerCount"></span></span>
+          <ol id="playerList" class="player-list"></ol>
+          <button id="playerAdd">+ 선수 추가</button>
+        </div>
+        <div class="field">
+          <span>선수 이름</span>
+          <div class="row">
+            <input type="text" id="playerName" />
+            <button id="playerDelete">삭제</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="total">
+        <span>총점</span>
+        <strong id="total"></strong>
+        <span id="totalMax"></span>
+      </div>
+    </aside>
+  </main>
+
+  <script type="module" src="/src/radarMain.ts"></script>
+</body>
+</html>

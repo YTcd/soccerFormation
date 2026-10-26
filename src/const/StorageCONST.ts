@@ -7,3 +7,7 @@ export const COORDINATE_PRECISION = 1000;
 export const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 
 export const SHARE_QUERY_KEY = 's';
+
+export const RADAR_PLAYERS_KEY = 'soccer-radar-players';
+
+export const RADAR_ACTIVE_PLAYER_KEY = 'soccer-radar-active-player';
